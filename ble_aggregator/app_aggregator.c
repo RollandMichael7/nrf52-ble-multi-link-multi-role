@@ -214,8 +214,8 @@ void app_aggregator_data_update(uint16_t conn_handle, uint8_t *p_data, uint32_t 
 void app_aggregator_data_update_by_index(uint16_t device_index)
 {
     tx_command_payload[0] = AGG_BLE_LINK_DATA_UPDATE;
-    tx_command_payload[1] = m_link_info_list[device_index].conn_handle >> 8;
-    tx_command_payload[2] = m_link_info_list[device_index].conn_handle & 0xFF;
+    tx_command_payload[1] = m_link_info_list[device_index].conn_handle & 0xFF;
+    tx_command_payload[2] = m_link_info_list[device_index].conn_handle >> 8;
     tx_command_payload[3] = 3;
     tx_command_payload[4] = m_link_info_list[device_index].button_state;
     tx_command_payload[5] = m_link_info_list[device_index].rf_phy;
@@ -227,7 +227,7 @@ void app_aggregator_data_update_by_index(uint16_t device_index)
 void app_aggregator_data_update_humidity(uint16_t device_index)
 {
     tx_command_payload[0] = AGG_BLE_HUMIDITY;
-    tx_command_payload[1] = device_index;
+    tx_command_payload[1] = m_link_info_list[device_index].conn_handle & 0xFF;
     tx_command_payload[2] = m_link_info_list[device_index].humidity;
     tx_command_payload_length = 3;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
