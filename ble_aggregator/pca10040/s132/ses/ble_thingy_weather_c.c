@@ -209,12 +209,10 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
             switch (p_char->characteristic.uuid.uuid)
             {
                 case THINGY_WEATHER_UUID_HUMIDITY:
-                    NRF_LOG_INFO("Humidity UUID found\r\n");
                     evt.params.peer_db.humidity_handle = p_char->characteristic.handle_value;
                     evt.params.peer_db.humidity_cccd_handle = p_char->cccd_handle;
                     break;
                 default:
-                    NRF_LOG_INFO("unknown weather station uuid\r\n");
                     break;
             }
         }
@@ -335,10 +333,8 @@ uint32_t ble_thingy_weather_c_humidity_notif_enable(ble_thingy_weather_c_t * p_b
 
     if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
     {
-        NRF_LOG_INFO("Invalid weather handle\r\n");
         return NRF_ERROR_INVALID_STATE;
     }
-    NRF_LOG_INFO("Valid weather handle\r\n");
 
     return cccd_configure(p_ble_thingy_weather_c->conn_handle,
                           p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle,

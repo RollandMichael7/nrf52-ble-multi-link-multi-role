@@ -19,6 +19,7 @@ typedef struct
     uint8_t  button_state;
     uint8_t  led_state;
     uint8_t  led_color[3];
+    uint8_t  humidity;
     uint8_t  rf_phy;
     int8_t   last_rssi;
     uint8_t  adv_name[MAX_ADV_NAME_LENGTH + 1];
@@ -38,6 +39,8 @@ void app_aggregator_on_central_connect(const ble_gap_evt_t *ble_gap_evt, connect
 void app_aggregator_on_central_disconnect(const ble_gap_evt_t *ble_gap_evt);
 
 void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
+
+void app_aggregator_humidity_data(uint16_t conn_handle, uint8_t humidity);
 
 void app_aggregator_on_led_update(uint8_t led_state, uint32_t conn_handle_mask);
 
