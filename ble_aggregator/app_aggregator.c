@@ -230,7 +230,7 @@ void app_aggregator_data_update_humidity(uint16_t device_index)
     tx_command_payload[1] = m_link_info_list[device_index].conn_handle >> 8;
     tx_command_payload[2] = m_link_info_list[device_index].conn_handle & 0xFF;
     tx_command_payload[3] = m_link_info_list[device_index].humidity;
-    tx_command_payload_length = 3;
+    tx_command_payload_length = 4;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
