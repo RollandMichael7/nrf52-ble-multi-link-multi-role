@@ -264,7 +264,7 @@ void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state)
     }
 }
 
-void app_aggregator_humidity_data(uint16_t conn_handle, uint8_t humidity)
+void app_aggregator_on_humidity_data(uint16_t conn_handle, uint8_t humidity)
 {
     uint16_t device_index = device_list_search(conn_handle);
     if (device_index != BLE_CONN_HANDLE_INVALID)

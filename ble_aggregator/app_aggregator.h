@@ -40,7 +40,7 @@ void app_aggregator_on_central_disconnect(const ble_gap_evt_t *ble_gap_evt);
 
 void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
 
-void app_aggregator_humidity_data(uint16_t conn_handle, uint8_t humidity);
+void app_aggregator_on_humidity_data(uint16_t conn_handle, uint8_t humidity);
 
 void app_aggregator_on_led_update(uint8_t led_state, uint32_t conn_handle_mask);
 

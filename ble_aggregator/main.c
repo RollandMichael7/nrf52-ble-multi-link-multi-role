@@ -575,7 +575,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
             //NRF_LOG_INFO("humidity: %d\r\n", p_thingy_weather_c_evt->params.humidity.value);
             // Forward the data to the app aggregator module
             //app_aggregator_on_blinky_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
-            app_aggregator_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
+            app_aggregator_on_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
         } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
 
         default:
