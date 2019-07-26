@@ -67,7 +67,7 @@ NRF_SDH_BLE_OBSERVER(_name ## _obs,                                             
  * @param   _name   Name of the array of instances.
  * @param   _cnt    Number of instances to define.
  */
-#define BLE_THINGY_weather_C_ARRAY_DEF(_name, _cnt)                                                            \
+#define BLE_THINGY_WEATHER_C_ARRAY_DEF(_name, _cnt)                                                            \
 static ble_thingy_weather_c_t _name[_cnt];                                                                     \
 NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                                                \
                       BLE_THINGY_WEATHER_C_BLE_OBSERVER_PRIO,                                                  \
