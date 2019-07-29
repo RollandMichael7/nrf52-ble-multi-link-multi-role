@@ -73,6 +73,7 @@
 #include "nrf_log_default_backends.h"
 
 #include "ble_thingy_weather_c.h"
+#include "ble_thingy_battery_c.h"
 
 #define APP_BLE_CONN_CFG_TAG      1                                     /**< A tag that refers to the BLE stack configuration we set with @ref sd_ble_cfg_set. Default tag is @ref APP_BLE_CONN_CFG_TAG. */
 #define APP_BLE_OBSERVER_PRIO     3                                     /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -128,12 +129,14 @@ BLE_AGG_CFG_SERVICE_DEF(m_agg_cfg_service);                             /**< BLE
 
 BLE_LBS_C_ARRAY_DEF(m_lbs_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);           /**< LED Button client instances. */
 BLE_THINGY_UIS_C_ARRAY_DEF(m_thingy_uis_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);
-BLE_THINGY_weather_C_ARRAY_DEF(m_thingy_weather_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Weather Station client instances. */
+BLE_THINGY_WEATHER_C_ARRAY_DEF(m_thingy_weather_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Weather Station client instances. */
+BLE_THINGY_BATTERY_C_ARRAY_DEF(m_thingy_battery_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Battery service client instances. */
 BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc, NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 
 APP_TIMER_DEF(m_adv_led_blink_timer_id);
 APP_TIMER_DEF(m_scan_led_blink_timer_id);
 APP_TIMER_DEF(m_post_message_delay_timer_id);
+APP_TIMER_DEF(m_battery_read_timer_id);
 
 static char const m_target_periph_name[] = "NT:";                       /**< Name of the device we try to connect to. This name is searched for in the scan report data*/
 static char const m_target_blinky_name[] = "MLThingy";
@@ -378,6 +381,14 @@ static void scan_led_blink_callback(void *p)
     bsp_board_led_invert(CENTRAL_SCANNING_LED);
 }
 
+static void battery_read_callback(void *p)
+{
+  for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
+  {
+      ble_thingy_battery_c_read(&m_thingy_battery_c[i]);
+  }  
+}
+
 
 static void scan_led_state_set(bool adv_enabled, bool coded_phy)
 {
@@ -494,6 +505,33 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
     }
 }
     
+/**@brief Handles events coming from the Thingy Battery central module.
+ *
+ * @param[in] p_thingy_uis_c     The instance of THINGY_BATTERY_C that triggered the event.
+ * @param[in] p_thingy_uis_c_evt The THINGY_BATTERY_C event.
+ */
+static void thingy_battery_c_evt_handler(ble_thingy_battery_c_t * p_thingy_battery_c, ble_thingy_battery_c_evt_t * p_thingy_battery_c_evt)
+{
+    ret_code_t err_code;
+    switch (p_thingy_battery_c_evt->evt_type)
+    {
+        case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
+        {
+           // no module to discover
+
+        } break;
+
+        case BLE_THINGY_BATTERY_C_EVT_NOTIFICATION:
+        {
+            // Forward the data to the app aggregator module
+            app_aggregator_on_battery_data(p_thingy_battery_c_evt->conn_handle, p_thingy_battery_c_evt->params.battery.value);
+        } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
     
 /**@brief Handles events coming from the Thingy UI central module.
  *
@@ -507,7 +545,7 @@ static void thingy_uis_c_evt_handler(ble_thingy_uis_c_t * p_thingy_uis_c, ble_th
     {
         case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
         {
-            NRF_LOG_INFO("Thingy UI service discovered on conn_handle 0x%x\r\n", p_thingy_uis_c_evt->conn_handle);
+            NRF_LOG_INFO("Thingy UI service discovered on conn_handle 0x%x", p_thingy_uis_c_evt->conn_handle);
             
             // Thingy UI service discovered. Enable notification of Button.
             err_code = ble_thingy_uis_c_button_notif_enable(p_thingy_uis_c);
@@ -552,7 +590,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
     {
         case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
         {
-            NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x\r\n", p_thingy_weather_c_evt->conn_handle);
+            NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x", p_thingy_weather_c_evt->conn_handle);
             
             // Thingy Weather Station service discovered. Enable notification of Humidity.
             err_code = ble_thingy_weather_c_humidity_notif_enable(p_thingy_weather_c);
@@ -572,9 +610,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
 
         case BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION:
         {
-            //NRF_LOG_INFO("humidity: %d\r\n", p_thingy_weather_c_evt->params.humidity.value);
             // Forward the data to the app aggregator module
-            //app_aggregator_on_blinky_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
             app_aggregator_on_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
         } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
 
@@ -758,6 +794,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                                                                    p_gap_evt->conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         err_code = ble_thingy_weather_c_handles_assign(&m_thingy_weather_c[p_gap_evt->conn_handle],
+                                                                        p_gap_evt->conn_handle, NULL);
+                        APP_ERROR_CHECK(err_code);
+                        err_code = ble_thingy_battery_c_handles_assign(&m_thingy_battery_c[p_gap_evt->conn_handle],
                                                                         p_gap_evt->conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         break;
@@ -1027,6 +1066,25 @@ static void thingy_weather_c_init(void)
     }
 }
 
+/**@brief Battery collector initialization */
+static void thingy_battery_c_init(void)
+{
+    ret_code_t       err_code;
+    ble_thingy_battery_c_init_t thingy_battery_c_init_obj;
+
+    thingy_battery_c_init_obj.evt_handler = thingy_battery_c_evt_handler;
+
+    for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
+    {
+        err_code = ble_thingy_battery_c_init(&m_thingy_battery_c[i], &thingy_battery_c_init_obj);
+        APP_ERROR_CHECK(err_code);
+    }
+}
+
+/**@brief Start periodic battery reading */
+static void thingy_battery_timer_start() {
+    app_timer_start(m_battery_read_timer_id, APP_TIMER_TICKS(10000), 0);
+}
 
 /**@brief Function for initializing the BLE stack.
  *
@@ -1330,6 +1388,8 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
                   p_evt->conn_handle,
                   p_evt->conn_handle);
 
+    NRF_LOG_INFO("UUID: %x", p_evt->params.discovered_db.srv_uuid.uuid);
+
     ble_lbs_on_db_disc_evt(&m_lbs_c[p_evt->conn_handle], p_evt);
     ble_thingy_uis_on_db_disc_evt(&m_thingy_uis_c[p_evt->conn_handle], p_evt);
     ble_thingy_weather_on_db_disc_evt(&m_thingy_weather_c[p_evt->conn_handle], p_evt);
@@ -1498,6 +1558,9 @@ static void timer_init(void)
 
     err_code = app_timer_create(&m_scan_led_blink_timer_id, APP_TIMER_MODE_REPEATED, scan_led_blink_callback);
     APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_create(&m_battery_read_timer_id, APP_TIMER_MODE_REPEATED, battery_read_callback);
+    APP_ERROR_CHECK(err_code);
     
     err_code = app_timer_create(&m_post_message_delay_timer_id, APP_TIMER_MODE_SINGLE_SHOT, post_message_connect_callback);
 }
@@ -1577,6 +1640,8 @@ int main(void)
     lbs_c_init();
     thingy_uis_c_init();
     thingy_weather_c_init();
+    thingy_battery_c_init();
+    thingy_battery_timer_start();
     ble_conn_state_init();
     advertising_data_set();
     conn_params_init();

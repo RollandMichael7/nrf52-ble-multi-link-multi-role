@@ -16,6 +16,7 @@ typedef struct
 {
     uint16_t conn_handle;
     uint8_t  device_type;
+    uint8_t  battery_level;
     uint8_t  button_state;
     uint8_t  led_state;
     uint8_t  led_color[3];
@@ -39,6 +40,8 @@ void app_aggregator_on_central_connect(const ble_gap_evt_t *ble_gap_evt, connect
 void app_aggregator_on_central_disconnect(const ble_gap_evt_t *ble_gap_evt);
 
 void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
+
+void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level);
 
 void app_aggregator_on_humidity_data(uint16_t conn_handle, uint8_t humidity);
 
