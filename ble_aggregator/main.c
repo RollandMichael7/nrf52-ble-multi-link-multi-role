@@ -590,12 +590,13 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
     {
         case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
         {
-            NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x", p_thingy_weather_c_evt->conn_handle);
-            
-            // Thingy Weather Station service discovered. Enable notification of Humidity.
-            err_code = ble_thingy_weather_c_humidity_notif_enable(p_thingy_weather_c);
-            APP_ERROR_CHECK(err_code);
-            
+            NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x", p_thingy_weather_c_evt->conn_handle);            
+            // Thingy Weather Station service discovered. Enable notification of characteristics.
+            APP_ERROR_CHECK(ble_thingy_weather_c_temperature_notif_enable(p_thingy_weather_c));
+            APP_ERROR_CHECK(ble_thingy_weather_c_pressure_notif_enable(p_thingy_weather_c));
+            APP_ERROR_CHECK(ble_thingy_weather_c_humidity_notif_enable(p_thingy_weather_c));
+            APP_ERROR_CHECK(ble_thingy_weather_c_gas_notif_enable(p_thingy_weather_c));
+
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
             conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
@@ -608,11 +609,23 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
+        case BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION:
+        {
+           app_aggregator_on_temperature_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.temperature);
+        } break;
+        case BLE_THINGY_WEATHER_C_EVT_PRESSURE_NOTIFICATION:
+        {
+           app_aggregator_on_pressure_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.pressure);
+        } break;
         case BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION:
         {
+            app_aggregator_on_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity);
+        } break;
+        case BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION:
+        {
             // Forward the data to the app aggregator module
-            app_aggregator_on_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity.value);
-        } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
+            app_aggregator_on_gas_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.gas);
+        } break;
 
         default:
             // No implementation needed.

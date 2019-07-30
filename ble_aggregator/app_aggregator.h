@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "ble_gap.h"
 #include "ble_agg_config_service.h"
+#include "ble_thingy_weather_c.h"
 
 #define MAX_NUMBER_OF_LINKS 20
 
@@ -20,10 +21,13 @@ typedef struct
     uint8_t  button_state;
     uint8_t  led_state;
     uint8_t  led_color[3];
-    uint8_t  humidity;
     uint8_t  rf_phy;
     int8_t   last_rssi;
     uint8_t  adv_name[MAX_ADV_NAME_LENGTH + 1];
+    ble_thingy_weather_temperature_t temperature;
+    ble_thingy_weather_pressure_t pressure;
+    ble_thingy_weather_humidity_t humidity;
+    ble_thingy_weather_gas_t gas;
 }link_info_t;
 
 typedef struct
@@ -43,7 +47,13 @@ void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
 
 void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level);
 
-void app_aggregator_on_humidity_data(uint16_t conn_handle, uint8_t humidity);
+void app_aggregator_on_temperature_data(uint16_t conn_handle, ble_thingy_weather_temperature_t temperature);
+
+void app_aggregator_on_pressure_data(uint16_t conn_handle, ble_thingy_weather_pressure_t pressure);
+
+void app_aggregator_on_humidity_data(uint16_t conn_handle, ble_thingy_weather_humidity_t humidity);
+
+void app_aggregator_on_gas_data(uint16_t conn_handle, ble_thingy_weather_gas_t gas);
 
 void app_aggregator_on_led_update(uint8_t led_state, uint32_t conn_handle_mask);
 

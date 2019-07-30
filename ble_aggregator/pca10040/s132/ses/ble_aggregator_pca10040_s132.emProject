@@ -114,6 +114,10 @@
       <file file_name="../../../ble_aggregator_config_service/ble_agg_config_service.c" />
       <file file_name="../../../../common/ble_lbs_extended/ble_lbs_c_extended.c" />
       <file file_name="../../../ble_thingy_client/ble_thingy_weather_c.c" />
+      <configuration
+        Name="Release"
+        c_user_include_directories=".;..;../../ble_aggregator" />
+      <file file_name="../../../ble_thingy_client/ble_thingy_battery_c.c" />
     </folder>
     <folder Name="nRF_SoftDevice">
       <file file_name="../../../../../../../components/softdevice/common/nrf_sdh.c" />

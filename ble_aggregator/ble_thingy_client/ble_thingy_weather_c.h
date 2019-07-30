@@ -79,24 +79,48 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 #define THINGY_WEATHER_UUID_TEMPERATURE 0x0201
 #define THINGY_WEATHER_UUID_PRESSURE    0x0202
 #define THINGY_WEATHER_UUID_HUMIDITY    0x0203
+#define THINGY_WEATHER_UUID_GAS         0x0204
 
 /**@brief THINGY_UIS Client event type. */
 typedef enum
 {
     BLE_THINGY_WEATHER_C_EVT_DISCOVERY_COMPLETE = 1,  /**< Event indicating that the Weather Station Service has been discovered at the peer. */
-    BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION      /**< Event indicating that a notification of the Humidity Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION,      /**< Event indicating that a notification of the Temperature Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_PRESSURE_NOTIFICATION,      /**< Event indicating that a notification of the Pressure Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION,      /**< Event indicating that a notification of the Humidity Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION      /**< Event indicating that a notification of the Gas / Air Quality Weather Station characteristic has been received from the peer. */
 } ble_thingy_weather_c_evt_type_t;
 
 typedef struct {
-  uint8_t value;
+  uint8_t integer; // int8 integer (C)
+  uint8_t decimal; // uint8 decimal
+} ble_thingy_weather_temperature_t;
+
+typedef struct {
+  uint8_t integer[4]; // int32 integer (hPa)
+  uint8_t decimal; // uint8 decimal
+} ble_thingy_weather_pressure_t;
+
+typedef struct {
+  uint8_t value; // uint8 relative humidity (%)
 } ble_thingy_weather_humidity_t;
+
+typedef struct {
+  uint8_t co[2]; // uint16 eCO2 ppm
+  uint8_t tvoc[2]; // uint16 TVOC ppb
+} ble_thingy_weather_gas_t;
 
 /**@brief Structure containing the handles related to the Weather Station Service found on the peer. */
 typedef struct
 {
-    uint16_t humidity_cccd_handle;  /**< Handle of the CCCD of the Humidity characteristic. */
-    uint16_t temperature_handle;       /**< Handle of the humidity characteristic as provided by the SoftDevice. */
-    uint16_t humidity_handle;          /**< Handle of the Humidity characteristic as provided by the SoftDevice. */
+    uint16_t temperature_cccd_handle;  /**< Handle of the CCCD of the Temperature characteristic. */
+    uint16_t pressure_cccd_handle;
+    uint16_t humidity_cccd_handle;     
+    uint16_t gas_cccd_handle;
+    uint16_t temperature_handle;       /**< Handle of the temperature characteristic as provided by the SoftDevice. */
+    uint16_t pressure_handle;
+    uint16_t humidity_handle;
+    uint16_t gas_handle;
 } thingy_weather_db_t;
 
 /**@brief Weather Station Event structure. */
@@ -106,7 +130,10 @@ typedef struct
     uint16_t             conn_handle; /**< Connection handle on which the event occured.*/
     union
     {
+        ble_thingy_weather_temperature_t temperature;
+        ble_thingy_weather_pressure_t pressure;
         ble_thingy_weather_humidity_t humidity;      /**< Humidity Value received. This will be filled if the evt_type is @ref BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION. */
+        ble_thingy_weather_gas_t gas;
         thingy_weather_db_t     peer_db;         /**< Weather Station Service related handles found on the peer device. This will be filled if the evt_type is @ref BLE_THINGY_WEATHER_C_EVT_DISCOVERY_COMPLETE.*/
     } params;
 } ble_thingy_weather_c_evt_t;
@@ -166,11 +193,11 @@ uint32_t ble_thingy_weather_c_init(ble_thingy_weather_c_t * p_ble_thingy_weather
 void ble_thingy_weather_c_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context);
 
 
-/**@brief Function for requesting the peer to start sending notification of the humidity
- *        Characteristic.
+/**@brief Function for requesting the peer to start sending notification of Weather Station
+ *        Characteristics.
  *
- * @details This function will enable to notification of the humidity at the peer
- *          by writing to the CCCD of the humidity Characteristic.
+ * @details This function will enable to notification of the characteristic at the peer
+ *          by writing to the CCCD of the Characteristic.
  *
  * @param[in] p_ble_thingy_weather_c Pointer to the Weather Station Client structure.
  *
@@ -180,7 +207,10 @@ void ble_thingy_weather_c_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_conte
  *          NRF_ERROR_INVALID_STATE if no connection handle has been assigned (@ref ble_thingy_weather_c_handles_assign)
  *          NRF_ERROR_NULL if the given parameter is NULL
  */
+uint32_t ble_thingy_weather_c_temperature_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
+uint32_t ble_thingy_weather_c_pressure_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
 uint32_t ble_thingy_weather_c_humidity_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
+uint32_t ble_thingy_weather_c_gas_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
 
 
 /**@brief Function for handling events from the database discovery module.

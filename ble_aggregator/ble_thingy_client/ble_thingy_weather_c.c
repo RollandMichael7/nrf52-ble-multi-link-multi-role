@@ -154,6 +154,31 @@ static void on_hvx(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt_t co
     {
         return;
     }
+    // Check if this is a Temperature notification.
+    if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_handle)
+    {
+        ble_thingy_weather_c_evt_t ble_thingy_weather_c_evt;
+
+        ble_thingy_weather_c_evt.evt_type                   = BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION;
+        ble_thingy_weather_c_evt.conn_handle                = p_ble_thingy_weather_c->conn_handle;
+        ble_thingy_weather_c_evt.params.temperature.integer        = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
+        ble_thingy_weather_c_evt.params.temperature.decimal        = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
+        p_ble_thingy_weather_c->evt_handler(p_ble_thingy_weather_c, &ble_thingy_weather_c_evt);
+    }
+    // Check if this is a Pressure notification.
+    if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_handle)
+    {
+        ble_thingy_weather_c_evt_t ble_thingy_weather_c_evt;
+
+        ble_thingy_weather_c_evt.evt_type                   = BLE_THINGY_WEATHER_C_EVT_PRESSURE_NOTIFICATION;
+        ble_thingy_weather_c_evt.conn_handle                = p_ble_thingy_weather_c->conn_handle;
+        ble_thingy_weather_c_evt.params.pressure.integer[0]        = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
+        ble_thingy_weather_c_evt.params.pressure.integer[1]        = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
+        ble_thingy_weather_c_evt.params.pressure.integer[2]        = p_ble_evt->evt.gattc_evt.params.hvx.data[2];
+        ble_thingy_weather_c_evt.params.pressure.integer[3]        = p_ble_evt->evt.gattc_evt.params.hvx.data[3];        
+        ble_thingy_weather_c_evt.params.pressure.decimal           = p_ble_evt->evt.gattc_evt.params.hvx.data[4];
+        p_ble_thingy_weather_c->evt_handler(p_ble_thingy_weather_c, &ble_thingy_weather_c_evt);
+    }
     // Check if this is a Humidity notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_handle)
     {
@@ -166,6 +191,19 @@ static void on_hvx(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt_t co
             ble_thingy_weather_c_evt.params.humidity.value      = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
             p_ble_thingy_weather_c->evt_handler(p_ble_thingy_weather_c, &ble_thingy_weather_c_evt);
         }
+    }
+    // Check if this is a Gas / Air Quality notification.
+    if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_weather_c->peer_thingy_weather_db.gas_handle)
+    {
+        ble_thingy_weather_c_evt_t ble_thingy_weather_c_evt;
+
+        ble_thingy_weather_c_evt.evt_type                   = BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION;
+        ble_thingy_weather_c_evt.conn_handle                = p_ble_thingy_weather_c->conn_handle;
+        ble_thingy_weather_c_evt.params.gas.co[0]           = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
+        ble_thingy_weather_c_evt.params.gas.co[1]           = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
+        ble_thingy_weather_c_evt.params.gas.tvoc[0]         = p_ble_evt->evt.gattc_evt.params.hvx.data[2];
+        ble_thingy_weather_c_evt.params.gas.tvoc[1]         = p_ble_evt->evt.gattc_evt.params.hvx.data[3];        
+        p_ble_thingy_weather_c->evt_handler(p_ble_thingy_weather_c, &ble_thingy_weather_c_evt);
     }
 }
 
@@ -208,9 +246,21 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
             const ble_gatt_db_char_t * p_char = &(p_evt->params.discovered_db.charateristics[i]);
             switch (p_char->characteristic.uuid.uuid)
             {
+                case THINGY_WEATHER_UUID_TEMPERATURE:
+                    evt.params.peer_db.temperature_handle = p_char->characteristic.handle_value;
+                    evt.params.peer_db.temperature_cccd_handle = p_char->cccd_handle;
+                    break;
                 case THINGY_WEATHER_UUID_HUMIDITY:
                     evt.params.peer_db.humidity_handle = p_char->characteristic.handle_value;
                     evt.params.peer_db.humidity_cccd_handle = p_char->cccd_handle;
+                    break;
+                case THINGY_WEATHER_UUID_PRESSURE:
+                    evt.params.peer_db.pressure_handle = p_char->characteristic.handle_value;
+                    evt.params.peer_db.pressure_cccd_handle = p_char->cccd_handle;
+                    break;
+                case THINGY_WEATHER_UUID_GAS:
+                    evt.params.peer_db.gas_handle = p_char->characteristic.handle_value;
+                    evt.params.peer_db.gas_cccd_handle = p_char->cccd_handle;
                     break;
                 default:
                     break;
@@ -222,8 +272,13 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
         if (p_ble_thingy_weather_c->conn_handle != BLE_CONN_HANDLE_INVALID)
         {
             if ((p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_handle == BLE_GATT_HANDLE_INVALID)&&
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_handle == BLE_GATT_HANDLE_INVALID) &&
                 (p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_handle      == BLE_GATT_HANDLE_INVALID)&&
-                (p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle == BLE_GATT_HANDLE_INVALID))
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.gas_handle == BLE_GATT_HANDLE_INVALID) &&
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle == BLE_GATT_HANDLE_INVALID) )
             {
                 p_ble_thingy_weather_c->peer_thingy_weather_db = evt.params.peer_db;
             }
@@ -245,9 +300,14 @@ uint32_t ble_thingy_weather_c_init(ble_thingy_weather_c_t * p_ble_thingy_weather
     VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c_init);
     VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c_init->evt_handler);
 
+    p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_cccd_handle = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle = BLE_GATT_HANDLE_INVALID;
+    p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_cccd_handle = BLE_GATT_HANDLE_INVALID;
+    p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_handle      = BLE_GATT_HANDLE_INVALID;
+    p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_handle      = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_handle         = BLE_GATT_HANDLE_INVALID;
+    p_ble_thingy_weather_c->peer_thingy_weather_db.gas_handle      = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->conn_handle                    = BLE_CONN_HANDLE_INVALID;
     p_ble_thingy_weather_c->evt_handler                    = p_ble_thingy_weather_c_init->evt_handler;
 
@@ -326,6 +386,33 @@ static uint32_t cccd_configure(uint16_t conn_handle, uint16_t handle_cccd, bool 
     return NRF_SUCCESS;
 }
 
+uint32_t ble_thingy_weather_c_temperature_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    return cccd_configure(p_ble_thingy_weather_c->conn_handle,
+                          p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_cccd_handle,
+                          true);
+}
+
+uint32_t ble_thingy_weather_c_pressure_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    return cccd_configure(p_ble_thingy_weather_c->conn_handle,
+                          p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_cccd_handle,
+                          true);
+}
 
 uint32_t ble_thingy_weather_c_humidity_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c)
 {
@@ -338,6 +425,20 @@ uint32_t ble_thingy_weather_c_humidity_notif_enable(ble_thingy_weather_c_t * p_b
 
     return cccd_configure(p_ble_thingy_weather_c->conn_handle,
                           p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle,
+                          true);
+}
+
+uint32_t ble_thingy_weather_c_gas_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    return cccd_configure(p_ble_thingy_weather_c->conn_handle,
+                          p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle,
                           true);
 }
 
