@@ -118,6 +118,7 @@
         Name="Release"
         c_user_include_directories=".;..;../../ble_aggregator" />
       <file file_name="../../../ble_thingy_client/ble_thingy_battery_c.c" />
+      <file file_name="../../../ble_thingy_client/ble_thingy_motion_c.c" />
     </folder>
     <folder Name="nRF_SoftDevice">
       <file file_name="../../../../../../../components/softdevice/common/nrf_sdh.c" />

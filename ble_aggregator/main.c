@@ -74,6 +74,7 @@
 
 #include "ble_thingy_weather_c.h"
 #include "ble_thingy_battery_c.h"
+#include "ble_thingy_motion_c.h"
 
 #define APP_BLE_CONN_CFG_TAG      1                                     /**< A tag that refers to the BLE stack configuration we set with @ref sd_ble_cfg_set. Default tag is @ref APP_BLE_CONN_CFG_TAG. */
 #define APP_BLE_OBSERVER_PRIO     3                                     /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -130,6 +131,7 @@ BLE_AGG_CFG_SERVICE_DEF(m_agg_cfg_service);                             /**< BLE
 BLE_LBS_C_ARRAY_DEF(m_lbs_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);           /**< LED Button client instances. */
 BLE_THINGY_UIS_C_ARRAY_DEF(m_thingy_uis_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);
 BLE_THINGY_WEATHER_C_ARRAY_DEF(m_thingy_weather_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Weather Station client instances. */
+BLE_THINGY_MOTION_C_ARRAY_DEF(m_thingy_motion_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /** < Motion Service client instances. */
 BLE_THINGY_BATTERY_C_ARRAY_DEF(m_thingy_battery_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Battery service client instances. */
 BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc, NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 
@@ -507,8 +509,8 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
     
 /**@brief Handles events coming from the Thingy Battery central module.
  *
- * @param[in] p_thingy_uis_c     The instance of THINGY_BATTERY_C that triggered the event.
- * @param[in] p_thingy_uis_c_evt The THINGY_BATTERY_C event.
+ * @param[in] p_thingy_battery_c     The instance of THINGY_BATTERY_C that triggered the event.
+ * @param[in] p_thingy_battery_c_evt The THINGY_BATTERY_C event.
  */
 static void thingy_battery_c_evt_handler(ble_thingy_battery_c_t * p_thingy_battery_c, ble_thingy_battery_c_evt_t * p_thingy_battery_c_evt)
 {
@@ -580,8 +582,8 @@ static void thingy_uis_c_evt_handler(ble_thingy_uis_c_t * p_thingy_uis_c, ble_th
 
 /**@brief Handles events coming from the Thingy Weather Station central module.
  *
- * @param[in] p_thingy_uis_c     The instance of THINGY_WEATHER_C that triggered the event.
- * @param[in] p_thingy_uis_c_evt The THINGY_WEATHER_C event.
+ * @param[in] p_thingy_weather_c     The instance of THINGY_WEATHER_C that triggered the event.
+ * @param[in] p_thingy_weather_c_evt The THINGY_WEATHER_C event.
  */
 static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weather_c, ble_thingy_weather_c_evt_t * p_thingy_weather_c_evt)
 {
@@ -625,6 +627,61 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         {
             // Forward the data to the app aggregator module
             app_aggregator_on_gas_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.gas);
+        } break;
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+/**@brief Handles events coming from the Thingy Motion central module.
+ *
+ * @param[in] p_thingy_motion_c     The instance of THINGY_MOTION_C that triggered the event.
+ * @param[in] p_thingy_motion_c_evt The THINGY_MOTION_C event.
+ */
+static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_c, ble_thingy_motion_c_evt_t * p_thingy_motion_c_evt)
+{
+    ret_code_t err_code;
+    switch (p_thingy_motion_c_evt->evt_type)
+    {
+        case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
+        {
+            NRF_LOG_INFO("Thingy Motion service discovered on conn_handle 0x%x", p_thingy_motion_c_evt->conn_handle);            
+            // Thingy Motion service discovered. Enable notification of characteristics.
+            APP_ERROR_CHECK(ble_thingy_motion_c_quaternion_notif_enable(p_thingy_motion_c));
+            APP_ERROR_CHECK(ble_thingy_motion_c_raw_notif_enable(p_thingy_motion_c));
+            APP_ERROR_CHECK(ble_thingy_motion_c_euler_notif_enable(p_thingy_motion_c));
+            APP_ERROR_CHECK(ble_thingy_motion_c_heading_notif_enable(p_thingy_motion_c));
+
+            ble_gap_conn_params_t conn_params;
+            conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
+            conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
+            conn_params.slave_latency     = SLAVE_LATENCY;
+            conn_params.conn_sup_timeout  = SUPERVISION_TIMEOUT;
+
+            sd_ble_gap_conn_param_update(p_thingy_motion_c_evt->conn_handle, &conn_params);
+            
+            scan_start(m_scan_mode_coded_phy);
+
+        } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
+
+        case BLE_THINGY_MOTION_C_EVT_QUATERNION_NOTIFICATION:
+        {
+           app_aggregator_on_quaternion_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.quaternion);
+        } break;
+        case BLE_THINGY_MOTION_C_EVT_RAW_NOTIFICATION:
+        {
+           app_aggregator_on_raw_motion_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.raw);
+        } break;
+        case BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION:
+        {
+            app_aggregator_on_euler_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.euler);
+        } break;
+        case BLE_THINGY_MOTION_C_EVT_HEADING_NOTIFICATION:
+        {
+            // Forward the data to the app aggregator module
+            app_aggregator_on_heading_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.heading);
         } break;
 
         default:
@@ -1078,6 +1135,22 @@ static void thingy_weather_c_init(void)
         APP_ERROR_CHECK(err_code);
     }
 }
+
+/**@brief Motion Service collector initialization */
+static void thingy_motion_c_init(void)
+{
+    ret_code_t       err_code;
+    ble_thingy_motion_c_init_t thingy_motion_c_init_obj;
+
+    thingy_motion_c_init_obj.evt_handler = thingy_motion_c_evt_handler;
+
+    for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
+    {
+        err_code = ble_thingy_motion_c_init(&m_thingy_motion_c[i], &thingy_motion_c_init_obj);
+        APP_ERROR_CHECK(err_code);
+    }
+}
+
 
 /**@brief Battery collector initialization */
 static void thingy_battery_c_init(void)
@@ -1597,6 +1670,7 @@ static void process_app_commands()
     {          
         uint32_t mask;
         NRF_LOG_INFO("APP COMMAND");
+        NRF_LOG_INFO("cmd: %d", agg_cmd_received);
         switch(agg_cmd_received)
         {
             case APPCMD_SET_LED_ALL:
@@ -1653,6 +1727,7 @@ int main(void)
     lbs_c_init();
     thingy_uis_c_init();
     thingy_weather_c_init();
+    //thingy_motion_c_init();
     thingy_battery_c_init();
     thingy_battery_timer_start();
     ble_conn_state_init();

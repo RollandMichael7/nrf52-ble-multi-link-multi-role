@@ -6,6 +6,7 @@
 #include "ble_gap.h"
 #include "ble_agg_config_service.h"
 #include "ble_thingy_weather_c.h"
+#include "ble_thingy_motion_c.h"
 
 #define MAX_NUMBER_OF_LINKS 20
 
@@ -28,6 +29,10 @@ typedef struct
     ble_thingy_weather_pressure_t pressure;
     ble_thingy_weather_humidity_t humidity;
     ble_thingy_weather_gas_t gas;
+    ble_thingy_motion_quaternion_t quaternions;
+    ble_thingy_motion_raw_t raw_motion;
+    ble_thingy_motion_euler_t euler;
+    ble_thingy_motion_heading_t heading;
 }link_info_t;
 
 typedef struct
@@ -52,6 +57,14 @@ void app_aggregator_on_temperature_data(uint16_t conn_handle, ble_thingy_weather
 void app_aggregator_on_pressure_data(uint16_t conn_handle, ble_thingy_weather_pressure_t pressure);
 
 void app_aggregator_on_humidity_data(uint16_t conn_handle, ble_thingy_weather_humidity_t humidity);
+
+void app_aggregator_on_quaternion_data(uint16_t conn_handle, ble_thingy_motion_quaternion_t quaternions);
+
+void app_aggregator_on_raw_motion_data(uint16_t conn_handle, ble_thingy_motion_raw_t data);
+
+void app_aggregator_on_euler_data(uint16_t conn_handle, ble_thingy_motion_euler_t euler);
+
+void app_aggregator_on_heading_data(uint16_t conn_handle, ble_thingy_motion_heading_t heading);
 
 void app_aggregator_on_gas_data(uint16_t conn_handle, ble_thingy_weather_gas_t gas);
 
