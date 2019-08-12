@@ -80,6 +80,7 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 #define THINGY_WEATHER_UUID_PRESSURE    0x0202
 #define THINGY_WEATHER_UUID_HUMIDITY    0x0203
 #define THINGY_WEATHER_UUID_GAS         0x0204
+#define THINGY_WEATHER_UUID_CONFIG      0x0206
 
 /**@brief THINGY_UIS Client event type. */
 typedef enum
@@ -121,6 +122,7 @@ typedef struct
     uint16_t pressure_handle;
     uint16_t humidity_handle;
     uint16_t gas_handle;
+    uint16_t config_handle;
 } thingy_weather_db_t;
 
 /**@brief Weather Station Event structure. */
@@ -137,6 +139,19 @@ typedef struct
         thingy_weather_db_t     peer_db;         /**< Weather Station Service related handles found on the peer device. This will be filled if the evt_type is @ref BLE_THINGY_WEATHER_C_EVT_DISCOVERY_COMPLETE.*/
     } params;
 } ble_thingy_weather_c_evt_t;
+
+/**@brief Structure for setting the Weather Station configuration. */
+typedef struct 
+{
+  uint16_t temp_interval;
+  uint16_t pressure_interval;
+  uint16_t humid_interval;
+  uint16_t color_interval;
+  uint8_t gas_mode;
+  uint8_t led_red;
+  uint8_t led_green;
+  uint8_t led_blue;
+} ble_thingy_weather_c_config_t;
 
 // Forward declaration of the ble_thingy_weather_c_t type.
 typedef struct ble_thingy_weather_c_s ble_thingy_weather_c_t;
@@ -242,6 +257,9 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
 uint32_t ble_thingy_weather_c_handles_assign(ble_thingy_weather_c_t *    p_ble_thingy_weather_c,
                                   uint16_t         conn_handle,
                                   const thingy_weather_db_t * p_peer_handles);
+
+/**@brief Function for writing the Thingy Weather Station configuration characteristic. */
+uint32_t ble_thingy_weather_c_configuration_send(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_thingy_weather_c_config_t * configuration);
 
 #ifdef __cplusplus
 }

@@ -593,11 +593,22 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
         {
             NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x", p_thingy_weather_c_evt->conn_handle);            
-            // Thingy Weather Station service discovered. Enable notification of characteristics.
+            // Thingy Weather Station service discovered. Configure sensors and enable notification of characteristics.
+            ble_thingy_weather_c_config_t config = {
+                .temp_interval = 60000,
+                .pressure_interval = 60000,
+                .humid_interval = 60000,
+                .color_interval = 60000,
+                .gas_mode = 3,
+                .led_red = 0,
+                .led_green = 0,
+                .led_blue = 0
+            };
             APP_ERROR_CHECK(ble_thingy_weather_c_temperature_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_pressure_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_humidity_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_gas_notif_enable(p_thingy_weather_c));
+            APP_ERROR_CHECK(ble_thingy_weather_c_configuration_send(p_thingy_weather_c, &config));
 
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
@@ -1136,7 +1147,9 @@ static void thingy_weather_c_init(void)
     }
 }
 
+
 /**@brief Motion Service collector initialization */
+/*
 static void thingy_motion_c_init(void)
 {
     ret_code_t       err_code;
@@ -1150,6 +1163,7 @@ static void thingy_motion_c_init(void)
         APP_ERROR_CHECK(err_code);
     }
 }
+*/
 
 
 /**@brief Battery collector initialization */
@@ -1169,7 +1183,7 @@ static void thingy_battery_c_init(void)
 
 /**@brief Start periodic battery reading */
 static void thingy_battery_timer_start() {
-    app_timer_start(m_battery_read_timer_id, APP_TIMER_TICKS(10000), 0);
+    app_timer_start(m_battery_read_timer_id, APP_TIMER_TICKS(300000), 0);
 }
 
 /**@brief Function for initializing the BLE stack.

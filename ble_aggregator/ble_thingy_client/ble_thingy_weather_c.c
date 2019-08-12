@@ -51,7 +51,7 @@ NRF_LOG_MODULE_REGISTER();
 #define TX_BUFFER_MASK         0x07                  /**< TX Buffer mask, must be a mask of continuous zeroes, followed by continuous sequence of ones: 000...111. */
 #define TX_BUFFER_SIZE         (TX_BUFFER_MASK + 1)  /**< Size of send buffer, which is 1 higher than the mask. */
 
-#define TUIS_WRITE_MESSAGE_LENGTH   8                     /**< Length of the write message for CCCD. */
+#define WEATHER_WRITE_MESSAGE_LENGTH   12                     /**< Length of the write message for Weather Station configuration. */
 
 typedef enum
 {
@@ -63,7 +63,7 @@ typedef enum
  */
 typedef struct
 {
-    uint8_t                  gattc_value[TUIS_WRITE_MESSAGE_LENGTH];  /**< The message to write. */
+    uint8_t                  gattc_value[WEATHER_WRITE_MESSAGE_LENGTH];  /**< The message to write. */
     ble_gattc_write_params_t gattc_params;                       /**< GATTC parameters for this message. */
 } write_params_t;
 
@@ -107,14 +107,15 @@ static void tx_buffer_process(void)
         }
         if (err_code == NRF_SUCCESS)
         {
-            NRF_LOG_DEBUG("SD Read/Write API returns Success..");
+            NRF_LOG_INFO("SD Read/Write API returns Success..");
             m_tx_index++;
             m_tx_index &= TX_BUFFER_MASK;
         }
         else
         {
-            NRF_LOG_DEBUG("SD Read/Write API returns error. This message sending will be "
+            NRF_LOG_INFO("SD Read/Write API returns error. This message sending will be "
                 "attempted again..");
+            NRF_LOG_INFO("error code %d", err_code);
         }
     }
 }
@@ -154,6 +155,7 @@ static void on_hvx(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt_t co
     {
         return;
     }
+    //NRF_LOG_INFO("env reading");
     // Check if this is a Temperature notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_handle)
     {
@@ -262,12 +264,15 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
                     evt.params.peer_db.gas_handle = p_char->characteristic.handle_value;
                     evt.params.peer_db.gas_cccd_handle = p_char->cccd_handle;
                     break;
+                case THINGY_WEATHER_UUID_CONFIG:
+                    evt.params.peer_db.config_handle = p_char->characteristic.handle_value;
+                    break;
                 default:
                     break;
             }
         }
 
-        NRF_LOG_INFO("Weather Station Service discovered at peer.\r\n");
+        //NRF_LOG_INFO("Weather Station Service discovered at peer.");
         //If the instance has been assigned prior to db_discovery, assign the db_handles
         if (p_ble_thingy_weather_c->conn_handle != BLE_CONN_HANDLE_INVALID)
         {
@@ -278,7 +283,8 @@ void ble_thingy_weather_on_db_disc_evt(ble_thingy_weather_c_t * p_ble_thingy_wea
                 (p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
                 (p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
                 (p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle == BLE_GATT_HANDLE_INVALID) &&
-                (p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle == BLE_GATT_HANDLE_INVALID) )
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle == BLE_GATT_HANDLE_INVALID) && 
+                (p_ble_thingy_weather_c->peer_thingy_weather_db.config_handle == BLE_GATT_HANDLE_INVALID) )
             {
                 p_ble_thingy_weather_c->peer_thingy_weather_db = evt.params.peer_db;
             }
@@ -308,6 +314,7 @@ uint32_t ble_thingy_weather_c_init(ble_thingy_weather_c_t * p_ble_thingy_weather
     p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_handle      = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_handle         = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->peer_thingy_weather_db.gas_handle      = BLE_GATT_HANDLE_INVALID;
+    p_ble_thingy_weather_c->peer_thingy_weather_db.config_handle   = BLE_GATT_HANDLE_INVALID;
     p_ble_thingy_weather_c->conn_handle                    = BLE_CONN_HANDLE_INVALID;
     p_ble_thingy_weather_c->evt_handler                    = p_ble_thingy_weather_c_init->evt_handler;
 
@@ -453,5 +460,47 @@ uint32_t ble_thingy_weather_c_handles_assign(ble_thingy_weather_c_t    * p_ble_t
     {
         p_ble_thingy_weather_c->peer_thingy_weather_db = *p_peer_handles;
     }
+    return NRF_SUCCESS;
+}
+
+uint32_t ble_thingy_weather_c_configuration_send(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_thingy_weather_c_config_t * config)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+    
+    NRF_LOG_INFO("writing Thingy Weather configuration: %i, %i, %i, %i, %i", (int)config->temp_interval,
+        (int)config->pressure_interval, (int)config->humid_interval, (int)config->color_interval, (int)config->gas_mode);
+    tx_message_t * p_msg;
+
+    p_msg              = &m_tx_buffer[m_tx_insert_index++];
+    m_tx_insert_index &= TX_BUFFER_MASK;
+
+    p_msg->req.write_req.gattc_params.handle   = p_ble_thingy_weather_c->peer_thingy_weather_db.config_handle;
+    p_msg->req.write_req.gattc_params.len      = 12;
+    p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
+    p_msg->req.write_req.gattc_params.offset   = 0;
+    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+    p_msg->req.write_req.gattc_value[0] = LSB_16(config->temp_interval);
+    p_msg->req.write_req.gattc_value[1] = MSB_16(config->temp_interval);
+    p_msg->req.write_req.gattc_value[2] = LSB_16(config->pressure_interval);
+    p_msg->req.write_req.gattc_value[3] = MSB_16(config->pressure_interval);
+    p_msg->req.write_req.gattc_value[4] = LSB_16(config->humid_interval);
+    p_msg->req.write_req.gattc_value[5] = MSB_16(config->humid_interval);
+    p_msg->req.write_req.gattc_value[6] = LSB_16(config->color_interval);
+    p_msg->req.write_req.gattc_value[7] = MSB_16(config->color_interval);
+    p_msg->req.write_req.gattc_value[8] = config->gas_mode;
+    p_msg->req.write_req.gattc_value[9] = config->led_red;
+    p_msg->req.write_req.gattc_value[10] = config->led_green;
+    p_msg->req.write_req.gattc_value[11] = config->led_blue;
+    //memcpy(p_msg->req.write_req.gattc_value, (void *)config, 12);
+    p_msg->conn_handle                         = p_ble_thingy_weather_c->conn_handle;
+    p_msg->type                                = WRITE_REQ;
+
+    tx_buffer_process();
+
     return NRF_SUCCESS;
 }
