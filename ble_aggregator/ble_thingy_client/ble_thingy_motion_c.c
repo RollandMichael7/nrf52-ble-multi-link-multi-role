@@ -177,7 +177,7 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
         ble_thingy_motion_c_evt.params.quaternion.z[1]        = p_ble_evt->evt.gattc_evt.params.hvx.data[13];
         ble_thingy_motion_c_evt.params.quaternion.z[2]        = p_ble_evt->evt.gattc_evt.params.hvx.data[14];
         ble_thingy_motion_c_evt.params.quaternion.z[3]        = p_ble_evt->evt.gattc_evt.params.hvx.data[15];
-        p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
+        p_ble_thingy_motion_c->evt_handler(&p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
     }
     // Check if this is a raw motion notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.raw_handle)
@@ -204,7 +204,7 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
         ble_thingy_motion_c_evt.params.raw.compass.y[1]      = p_ble_evt->evt.gattc_evt.params.hvx.data[15];        
         ble_thingy_motion_c_evt.params.raw.compass.z[0]      = p_ble_evt->evt.gattc_evt.params.hvx.data[16];
         ble_thingy_motion_c_evt.params.raw.compass.z[1]      = p_ble_evt->evt.gattc_evt.params.hvx.data[17];
-        p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
+        p_ble_thingy_motion_c->evt_handler(&p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
     }
     // Check if this is a euler notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.euler_handle)
@@ -227,7 +227,7 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
             ble_thingy_motion_c_evt.params.euler.yaw[1]       = p_ble_evt->evt.gattc_evt.params.hvx.data[9];
             ble_thingy_motion_c_evt.params.euler.yaw[2]       = p_ble_evt->evt.gattc_evt.params.hvx.data[10];
             ble_thingy_motion_c_evt.params.euler.yaw[3]       = p_ble_evt->evt.gattc_evt.params.hvx.data[11];
-            p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
+            p_ble_thingy_motion_c->evt_handler(&p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
         }
     }
     // Check if this is a heading notification.
@@ -241,7 +241,7 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
         ble_thingy_motion_c_evt.params.heading.value[1]    = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
         ble_thingy_motion_c_evt.params.heading.value[2]    = p_ble_evt->evt.gattc_evt.params.hvx.data[2];
         ble_thingy_motion_c_evt.params.heading.value[3]    = p_ble_evt->evt.gattc_evt.params.hvx.data[3];        
-        p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
+        p_ble_thingy_motion_c->evt_handler(&p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
     }
 }
 
