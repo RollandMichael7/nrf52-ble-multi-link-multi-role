@@ -137,6 +137,24 @@ static void on_write_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_ev
     tx_buffer_process();
 }
 
+static void on_read_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt_t const * p_ble_evt)
+{
+    // Check if the event is on the link for this instance
+    if (p_ble_thingy_weather_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
+        return;
+
+    ble_thingy_weather_c_config_t config;
+    NRF_LOG_INFO("config read len: %d", p_ble_evt->evt.gattc_evt.params.read_rsp.len);
+    memcpy(&config, p_ble_evt->evt.gattc_evt.params.read_rsp.data, p_ble_evt->evt.gattc_evt.params.read_rsp.len);
+    
+    ble_thingy_weather_c_evt_t evt;
+    evt.conn_handle = p_ble_thingy_weather_c->conn_handle;
+    evt.evt_type = BLE_THINGY_WEATHER_C_EVT_CONFIG_READING;   
+    evt.params.config = config;
+    p_ble_thingy_weather_c->evt_handler(&p_ble_thingy_weather_c, &evt);
+    
+    tx_buffer_process();
+}
 
 /**@brief Function for handling Handle Value Notification received from the SoftDevice.
  *
@@ -350,6 +368,10 @@ void ble_thingy_weather_c_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_conte
             on_write_rsp(p_ble_thingy_weather_c, p_ble_evt);
             break;
 
+        case BLE_GATTC_EVT_READ_RSP:
+            on_read_rsp(p_ble_thingy_weather_c, p_ble_evt);
+            break;
+
         case BLE_GAP_EVT_DISCONNECTED:
             on_disconnected(p_ble_thingy_weather_c, p_ble_evt);
             break;
@@ -500,6 +522,26 @@ uint32_t ble_thingy_weather_c_configuration_send(ble_thingy_weather_c_t * p_ble_
     p_msg->conn_handle                         = p_ble_thingy_weather_c->conn_handle;
     p_msg->type                                = WRITE_REQ;
 
+    tx_buffer_process();
+
+    return NRF_SUCCESS;
+}
+
+uint32_t ble_thingy_weather_c_configuration_read(ble_thingy_weather_c_t * p_ble_thingy_weather_c) {
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID) {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    NRF_LOG_INFO("reading Thingy Weather configuration");
+
+    tx_message_t * p_msg = &m_tx_buffer[m_tx_insert_index++];
+    m_tx_insert_index &= TX_BUFFER_MASK;
+
+    p_msg->type = READ_REQ;
+    p_msg->conn_handle = p_ble_thingy_weather_c->conn_handle;
+    p_msg->req.read_handle = p_ble_thingy_weather_c->peer_thingy_weather_db.config_handle;
     tx_buffer_process();
 
     return NRF_SUCCESS;

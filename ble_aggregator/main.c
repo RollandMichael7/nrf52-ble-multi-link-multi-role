@@ -306,7 +306,7 @@ static void gap_params_init(void)
 
 enum {APPCMD_ERROR, APPCMD_SET_LED_ALL, APPCMD_SET_LED_ON_OFF_ALL, 
       APPCMD_POST_CONNECT_MESSAGE, APPCMD_DISCONNECT_PERIPHERALS,
-      APPCMD_DISCONNECT_CENTRAL};
+      APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, APPCMD_WEATHER_CONFIG_WRITE};
 
 
 static volatile uint32_t agg_cmd_received = 0;
@@ -594,6 +594,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         {
             NRF_LOG_INFO("Thingy Weather Station service discovered on conn_handle 0x%x", p_thingy_weather_c_evt->conn_handle);            
             // Thingy Weather Station service discovered. Configure sensors and enable notification of characteristics.
+            /*
             ble_thingy_weather_c_config_t config = {
                 .temp_interval = 60000,
                 .pressure_interval = 60000,
@@ -604,11 +605,12 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
                 .led_green = 0,
                 .led_blue = 0
             };
+            */
             APP_ERROR_CHECK(ble_thingy_weather_c_temperature_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_pressure_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_humidity_notif_enable(p_thingy_weather_c));
             APP_ERROR_CHECK(ble_thingy_weather_c_gas_notif_enable(p_thingy_weather_c));
-            APP_ERROR_CHECK(ble_thingy_weather_c_configuration_send(p_thingy_weather_c, &config));
+            //APP_ERROR_CHECK(ble_thingy_weather_c_configuration_send(p_thingy_weather_c, &config));
 
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
@@ -638,6 +640,10 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         {
             // Forward the data to the app aggregator module
             app_aggregator_on_gas_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.gas);
+        } break;
+        case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
+        {
+            app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
         } break;
 
         default:
@@ -1677,6 +1683,28 @@ static void gatt_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
+/**@brief Function for configuring a Thingy node's Weather Station sensors from an app command.
+ */
+static void write_weather_config(uint8_t* cmd) {
+    uint8_t id = cmd[0];
+    ble_thingy_weather_c_t *p_ble_thingy_weather_c = &(m_thingy_weather_c[id]);
+    uint16_t temp = (cmd[1]) | (cmd[2] << 8);
+    uint16_t pressure = (cmd[3]) | (cmd[4] << 8);
+    uint16_t humid = (cmd[5]) | (cmd[6] << 8);
+    uint16_t color = (cmd[7]) | (cmd[8] << 8);
+    uint8_t gas = agg_cmd[9];
+    ble_thingy_weather_c_config_t config = {
+        .temp_interval = temp,
+        .pressure_interval = pressure,
+        .humid_interval = humid,
+        .color_interval = color,
+        .gas_mode = gas,
+        .led_red = 0,
+        .led_green = 0,
+        .led_blue = 0
+    };
+    ble_thingy_weather_c_configuration_send(p_ble_thingy_weather_c, &config);
+}
 
 static void process_app_commands()
 {           
@@ -1714,7 +1742,12 @@ static void process_app_commands()
             case APPCMD_DISCONNECT_CENTRAL:
                 sd_ble_gap_disconnect(m_per_con_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
                 break;
-            
+            case APPCMD_WEATHER_CONFIG_READ:
+                ble_thingy_weather_c_configuration_read(&(m_thingy_weather_c[agg_cmd[0]]));
+                break;
+            case APPCMD_WEATHER_CONFIG_WRITE:
+                write_weather_config(agg_cmd);
+                break;
             default:
                 break;
         }

@@ -89,7 +89,8 @@ typedef enum
     BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION,      /**< Event indicating that a notification of the Temperature Weather Station characteristic has been received from the peer. */
     BLE_THINGY_WEATHER_C_EVT_PRESSURE_NOTIFICATION,      /**< Event indicating that a notification of the Pressure Weather Station characteristic has been received from the peer. */
     BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION,      /**< Event indicating that a notification of the Humidity Weather Station characteristic has been received from the peer. */
-    BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION      /**< Event indicating that a notification of the Gas / Air Quality Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION,      /**< Event indicating that a notification of the Gas / Air Quality Weather Station characteristic has been received from the peer. */
+    BLE_THINGY_WEATHER_C_EVT_CONFIG_READING         /**< Event indicating that a reading of the Configuration characteristic has been received from the peer. */
 } ble_thingy_weather_c_evt_type_t;
 
 typedef struct {
@@ -110,6 +111,19 @@ typedef struct {
   uint8_t co[2]; // uint16 eCO2 ppm
   uint8_t tvoc[2]; // uint16 TVOC ppb
 } ble_thingy_weather_gas_t;
+
+/**@brief Structure for reading/writing the Weather Station configuration. */
+typedef struct 
+{
+  uint16_t temp_interval;
+  uint16_t pressure_interval;
+  uint16_t humid_interval;
+  uint16_t color_interval;
+  uint8_t gas_mode;
+  uint8_t led_red;
+  uint8_t led_green;
+  uint8_t led_blue;
+} ble_thingy_weather_c_config_t;
 
 /**@brief Structure containing the handles related to the Weather Station Service found on the peer. */
 typedef struct
@@ -136,22 +150,10 @@ typedef struct
         ble_thingy_weather_pressure_t pressure;
         ble_thingy_weather_humidity_t humidity;      /**< Humidity Value received. This will be filled if the evt_type is @ref BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION. */
         ble_thingy_weather_gas_t gas;
+        ble_thingy_weather_c_config_t config;
         thingy_weather_db_t     peer_db;         /**< Weather Station Service related handles found on the peer device. This will be filled if the evt_type is @ref BLE_THINGY_WEATHER_C_EVT_DISCOVERY_COMPLETE.*/
     } params;
 } ble_thingy_weather_c_evt_t;
-
-/**@brief Structure for setting the Weather Station configuration. */
-typedef struct 
-{
-  uint16_t temp_interval;
-  uint16_t pressure_interval;
-  uint16_t humid_interval;
-  uint16_t color_interval;
-  uint8_t gas_mode;
-  uint8_t led_red;
-  uint8_t led_green;
-  uint8_t led_blue;
-} ble_thingy_weather_c_config_t;
 
 // Forward declaration of the ble_thingy_weather_c_t type.
 typedef struct ble_thingy_weather_c_s ble_thingy_weather_c_t;
@@ -260,6 +262,10 @@ uint32_t ble_thingy_weather_c_handles_assign(ble_thingy_weather_c_t *    p_ble_t
 
 /**@brief Function for writing the Thingy Weather Station configuration characteristic. */
 uint32_t ble_thingy_weather_c_configuration_send(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_thingy_weather_c_config_t * configuration);
+
+/**@brief Function for reading the Thingy Weather Station configuration characteristic.
+  *       Generates a BLE_THINGY_WEATHER_C_EVT_CONFIG_READING event. */
+uint32_t ble_thingy_weather_c_configuration_read(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
 
 #ifdef __cplusplus
 }
