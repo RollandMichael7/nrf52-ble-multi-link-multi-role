@@ -144,14 +144,13 @@ static void on_read_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt
         return;
 
     ble_thingy_weather_c_config_t config;
-    NRF_LOG_INFO("config read len: %d", p_ble_evt->evt.gattc_evt.params.read_rsp.len);
     memcpy(&config, p_ble_evt->evt.gattc_evt.params.read_rsp.data, p_ble_evt->evt.gattc_evt.params.read_rsp.len);
     
     ble_thingy_weather_c_evt_t evt;
     evt.conn_handle = p_ble_thingy_weather_c->conn_handle;
     evt.evt_type = BLE_THINGY_WEATHER_C_EVT_CONFIG_READING;   
     evt.params.config = config;
-    p_ble_thingy_weather_c->evt_handler(&p_ble_thingy_weather_c, &evt);
+    p_ble_thingy_weather_c->evt_handler(p_ble_thingy_weather_c, &evt);
     
     tx_buffer_process();
 }
