@@ -76,6 +76,7 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 
 #define THINGY_MOTION_UUID_BASE        {0x42, 0x00, 0x74, 0xA9, 0xFF, 0x52, 0x10, 0x9B, 0x33, 0x49, 0x35, 0x9B, 0x00, 0x01, 0x68, 0xEF}
 #define THINGY_MOTION_UUID_SERVICE     0x0400
+#define THINGY_MOTION_UUID_CONFIG      0x0401
 #define THINGY_MOTION_UUID_QUATERNION  0x0404
 #define THINGY_MOTION_UUID_RAW         0x0406
 #define THINGY_MOTION_UUID_EULER       0x0407
@@ -88,7 +89,8 @@ typedef enum
     BLE_THINGY_MOTION_C_EVT_QUATERNION_NOTIFICATION,      /**< Event indicating that a notification of the Quaternion characteristic has been received from the peer. */
     BLE_THINGY_MOTION_C_EVT_RAW_NOTIFICATION,      /**< Event indicating that a notification of the Raw Motion characteristic has been received from the peer. */
     BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION,      /**< Event indicating that a notification of the Euler characteristic has been received from the peer. */
-    BLE_THINGY_MOTION_C_EVT_HEADING_NOTIFICATION      /**< Event indicating that a notification of the Heading characteristic has been received from the peer. */
+    BLE_THINGY_MOTION_C_EVT_HEADING_NOTIFICATION,      /**< Event indicating that a notification of the Heading characteristic has been received from the peer. */
+    BLE_THINGY_MOTION_C_EVT_CONFIG_READING            /**< Event indicating that a reading of the Config characteristic has been received from the peer. */
 } ble_thingy_motion_c_evt_type_t;
 
 typedef struct {
@@ -120,6 +122,14 @@ typedef struct {
   uint8_t value[4]; // 16Q16 fixed point int32 value (deg)
 } ble_thingy_motion_heading_t;
 
+typedef struct {
+  uint16_t step_interval;
+  uint16_t temp_compensation_interval;
+  uint16_t magnet_compensation_interval;
+  uint16_t frequency;
+  uint8_t wake_on_motion;
+} ble_thingy_motion_c_config_t;
+
 /**@brief Structure containing the handles related to the motion Service found on the peer. */
 typedef struct
 {
@@ -127,6 +137,7 @@ typedef struct
     uint16_t raw_cccd_handle;
     uint16_t euler_cccd_handle;     
     uint16_t heading_cccd_handle;
+    uint16_t config_handle;
     uint16_t quaternion_handle;       /**< Handle of the quaternion characteristic as provided by the SoftDevice. */
     uint16_t raw_handle;
     uint16_t euler_handle;
@@ -140,6 +151,7 @@ typedef struct
     uint16_t             conn_handle; /**< Connection handle on which the event occured.*/
     union
     {
+        ble_thingy_motion_c_config_t config;
         ble_thingy_motion_quaternion_t quaternion;
         ble_thingy_motion_raw_t raw;
         ble_thingy_motion_euler_t euler;      /**< Euler Value received. This will be filled if the evt_type is @ref BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION. */
@@ -252,6 +264,8 @@ void ble_thingy_motion_on_db_disc_evt(ble_thingy_motion_c_t * p_ble_thingy_motio
 uint32_t ble_thingy_motion_c_handles_assign(ble_thingy_motion_c_t *    p_ble_thingy_motion_c,
                                   uint16_t         conn_handle,
                                   const thingy_motion_db_t * p_peer_handles);
+
+uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_thingy_motion_c);
 
 #ifdef __cplusplus
 }

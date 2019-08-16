@@ -25,11 +25,12 @@ typedef struct
     uint8_t  rf_phy;
     int8_t   last_rssi;
     uint8_t  adv_name[MAX_ADV_NAME_LENGTH + 1];
+    ble_thingy_weather_c_config_t env_config;
     ble_thingy_weather_temperature_t temperature;
     ble_thingy_weather_pressure_t pressure;
     ble_thingy_weather_humidity_t humidity;
     ble_thingy_weather_gas_t gas;
-    ble_thingy_weather_c_config_t env_config;
+    ble_thingy_motion_c_config_t motion_config;
     ble_thingy_motion_quaternion_t quaternions;
     ble_thingy_motion_raw_t raw_motion;
     ble_thingy_motion_euler_t euler;
@@ -53,13 +54,15 @@ void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
 
 void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level);
 
+void app_aggregator_on_env_config_data(uint16_t conn_handle, ble_thingy_weather_c_config_t config);
+
 void app_aggregator_on_temperature_data(uint16_t conn_handle, ble_thingy_weather_temperature_t temperature);
 
 void app_aggregator_on_pressure_data(uint16_t conn_handle, ble_thingy_weather_pressure_t pressure);
 
 void app_aggregator_on_humidity_data(uint16_t conn_handle, ble_thingy_weather_humidity_t humidity);
 
-void app_aggregator_on_env_config_data(uint16_t conn_handle, ble_thingy_weather_c_config_t config);
+void app_aggregator_on_motion_config_data(uint16_t conn_handle, ble_thingy_motion_c_config_t config);
 
 void app_aggregator_on_quaternion_data(uint16_t conn_handle, ble_thingy_motion_quaternion_t quaternions);
 

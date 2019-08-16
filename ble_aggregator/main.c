@@ -306,7 +306,9 @@ static void gap_params_init(void)
 
 enum {APPCMD_ERROR, APPCMD_SET_LED_ALL, APPCMD_SET_LED_ON_OFF_ALL, 
       APPCMD_POST_CONNECT_MESSAGE, APPCMD_DISCONNECT_PERIPHERALS,
-      APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, APPCMD_WEATHER_CONFIG_WRITE};
+      APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, 
+      APPCMD_WEATHER_CONFIG_WRITE, APPCMD_MOTION_CONFIG_READ, 
+      APPCMD_MOTION_CONFIG_WRITE};
 
 
 static volatile uint32_t agg_cmd_received = 0;
@@ -624,6 +626,10 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
+        case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
+        {
+            app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
+        } break;
         case BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION:
         {
            app_aggregator_on_temperature_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.temperature);
@@ -640,10 +646,6 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         {
             // Forward the data to the app aggregator module
             app_aggregator_on_gas_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.gas);
-        } break;
-        case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
-        {
-            app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
         } break;
 
         default:
@@ -683,6 +685,10 @@ static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
+        case BLE_THINGY_MOTION_C_EVT_CONFIG_READING:
+        {
+            app_aggregator_on_motion_config_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.config);
+        } break;
         case BLE_THINGY_MOTION_C_EVT_QUATERNION_NOTIFICATION:
         {
            app_aggregator_on_quaternion_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.quaternion);
@@ -1748,6 +1754,8 @@ static void process_app_commands()
             case APPCMD_WEATHER_CONFIG_WRITE:
                 write_weather_config(agg_cmd);
                 break;
+            case APPCMD_MOTION_CONFIG_READ:
+                ble_thingy_motion_c_configuration_read(&(m_thingy_motion_c[agg_cmd[0]]));
             default:
                 break;
         }
