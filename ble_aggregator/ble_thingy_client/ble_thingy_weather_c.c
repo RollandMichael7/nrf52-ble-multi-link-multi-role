@@ -142,7 +142,6 @@ static void on_read_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt
     // Check if the event is on the link for this instance
     if (p_ble_thingy_weather_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
         return;
-
     ble_thingy_weather_c_config_t config;
     memcpy(&config, p_ble_evt->evt.gattc_evt.params.read_rsp.data, p_ble_evt->evt.gattc_evt.params.read_rsp.len);
     
@@ -412,6 +411,35 @@ static uint32_t cccd_configure(uint16_t conn_handle, uint16_t handle_cccd, bool 
 
     tx_buffer_process();
     return NRF_SUCCESS;
+}
+
+uint32_t ble_thingy_weather_c_sensor_set(ble_thingy_weather_c_t * p_ble_thingy_weather_c, uint8_t sensor_id, uint8_t val)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_weather_c);
+    
+    if (p_ble_thingy_weather_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    uint16_t handle_cccd;
+    switch(sensor_id) {
+        case TEMPERATURE_ID:
+          handle_cccd = p_ble_thingy_weather_c->peer_thingy_weather_db.temperature_cccd_handle;
+          break;
+        case PRESSURE_ID:
+          handle_cccd = p_ble_thingy_weather_c->peer_thingy_weather_db.pressure_cccd_handle;
+          break;
+        case HUMIDITY_ID:
+          handle_cccd = p_ble_thingy_weather_c->peer_thingy_weather_db.humidity_cccd_handle;
+          break;
+        case GAS_ID:
+          handle_cccd = p_ble_thingy_weather_c->peer_thingy_weather_db.gas_cccd_handle;
+          break;
+        default:
+          return NRF_ERROR_INVALID_DATA;
+    }
+    return cccd_configure(p_ble_thingy_weather_c->conn_handle, handle_cccd, val);
 }
 
 uint32_t ble_thingy_weather_c_temperature_notif_enable(ble_thingy_weather_c_t * p_ble_thingy_weather_c)

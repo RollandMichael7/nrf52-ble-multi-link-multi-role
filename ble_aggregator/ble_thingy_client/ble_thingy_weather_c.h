@@ -82,7 +82,15 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 #define THINGY_WEATHER_UUID_GAS         0x0204
 #define THINGY_WEATHER_UUID_CONFIG      0x0206
 
-/**@brief THINGY_UIS Client event type. */
+
+/**@brief Sensor IDs for toggling sensors through app commands. */
+enum { TEMPERATURE_ID = 5,
+       HUMIDITY_ID,
+       PRESSURE_ID,
+       GAS_ID 
+};
+
+/**@brief THINGY_WEATHER Client event type. */
 typedef enum
 {
     BLE_THINGY_WEATHER_C_EVT_DISCOVERY_COMPLETE = 1,  /**< Event indicating that the Weather Station Service has been discovered at the peer. */
@@ -266,6 +274,9 @@ uint32_t ble_thingy_weather_c_configuration_send(ble_thingy_weather_c_t * p_ble_
 /**@brief Function for reading the Thingy Weather Station configuration characteristic.
   *       Generates a BLE_THINGY_WEATHER_C_EVT_CONFIG_READING event. */
 uint32_t ble_thingy_weather_c_configuration_read(ble_thingy_weather_c_t * p_ble_thingy_weather_c);
+
+/**@brief Function to enable/disable notifications from a Weather Station characteristic. */
+uint32_t ble_thingy_weather_c_sensor_set(ble_thingy_weather_c_t * p_ble_thingy_weather_c, uint8_t sensor_id, uint8_t val);
 
 #ifdef __cplusplus
 }
