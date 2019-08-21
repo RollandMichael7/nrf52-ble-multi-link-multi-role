@@ -11,7 +11,7 @@ enum {APP_AGG_ERROR_CONN_HANDLE_CONFLICT = 1, APP_AGG_ERROR_LINK_INFO_LIST_FULL,
 enum TX_COMMANDS {AGG_BLE_LINK_CONNECTED = 1, AGG_BLE_LINK_DISCONNECTED, AGG_BLE_LINK_DATA_UPDATE, AGG_BLE_BATTERY, 
                   AGG_BLE_LED_BUTTON_PRESSED, AGG_BLE_RSSI, AGG_BLE_TEMPERATURE, AGG_BLE_PRESSURE, AGG_BLE_HUMIDITY, 
                   AGG_BLE_GAS, AGG_BLE_ENV_CONFIG, AGG_BLE_QUATERNIONS, AGG_BLE_RAW_MOTION, AGG_BLE_EULER, AGG_BLE_HEADING, 
-                  AGG_BLE_MOTION_CONFIG};
+                  AGG_BLE_MOTION_CONFIG, AGG_BLE_CONN_PARAM};
 enum {APP_AGG_DEVICE_TYPE_UNKNOWN, APP_AGG_DEVICE_TYPE_BLINKY, APP_AGG_DEVICE_TYPE_THINGY, APP_AGG_DEVICE_TYPE_END};
 //static char *device_type_string_list[] = {"Unknown", "Blinky", "Thingy"};
 static char    *m_phy_name_string_list[] = {"NONE", "1Mbps", "2Mbps", "INVALID", "Coded"};
@@ -239,6 +239,23 @@ void app_aggregator_data_update_battery(uint16_t device_index)
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
+void app_aggregator_data_update_conn_param(uint16_t device_index)
+{
+    tx_command_payload[0] = AGG_BLE_CONN_PARAM;
+    tx_command_payload[1] = m_link_info_list[device_index].conn_handle >> 8;
+    tx_command_payload[2] = m_link_info_list[device_index].conn_handle & 0xFF;
+    tx_command_payload[3] = LSB_16(m_link_info_list[device_index].conn_params.min_interval);
+    tx_command_payload[4] = MSB_16(m_link_info_list[device_index].conn_params.min_interval);
+    tx_command_payload[5] = LSB_16(m_link_info_list[device_index].conn_params.max_interval);
+    tx_command_payload[6] = MSB_16(m_link_info_list[device_index].conn_params.max_interval);
+    tx_command_payload[7] = LSB_16(m_link_info_list[device_index].conn_params.slave_latency);
+    tx_command_payload[8] = MSB_16(m_link_info_list[device_index].conn_params.slave_latency);
+    tx_command_payload[9] = LSB_16(m_link_info_list[device_index].conn_params.sup_timeout);
+    tx_command_payload[10] = MSB_16(m_link_info_list[device_index].conn_params.sup_timeout);
+    tx_command_payload_length = 11;
+    cmd_buffer_put(tx_command_payload, tx_command_payload_length);
+}
+
 void app_aggregator_data_update_env_config(uint16_t device_index)
 {
     tx_command_payload[0] = AGG_BLE_ENV_CONFIG;
@@ -308,6 +325,7 @@ void app_aggregator_data_update_gas(uint16_t device_index)
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
+/*
 void app_aggregator_data_update_motion_config(uint16_t device_index)
 {
     tx_command_payload[0] = AGG_BLE_MOTION_CONFIG;
@@ -325,6 +343,7 @@ void app_aggregator_data_update_motion_config(uint16_t device_index)
     tx_command_payload_length = 12;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
+*/
 
 void app_aggregator_data_update_quaternions(uint16_t device_index)
 {
@@ -452,6 +471,17 @@ void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level)
     }
 }
 
+void app_aggregator_on_conn_param_data(uint16_t conn_handle, ble_thingy_config_conn_param_t params)
+{
+    uint16_t device_index = device_list_search(conn_handle);
+    if(device_index != BLE_CONN_HANDLE_INVALID)
+    {
+        m_link_info_list[device_index].conn_params = params;
+        app_aggregator_data_update_conn_param(device_index);
+        m_schedule_device_list_print = true;
+    }
+}
+
 void app_aggregator_on_env_config_data(uint16_t conn_handle, ble_thingy_weather_c_config_t config)
 {
     uint16_t device_index = device_list_search(conn_handle);
@@ -507,6 +537,7 @@ void app_aggregator_on_gas_data(uint16_t conn_handle, ble_thingy_weather_gas_t g
     }
 }
 
+/*
 void app_aggregator_on_motion_config_data(uint16_t conn_handle, ble_thingy_motion_c_config_t config)
 {
     uint16_t device_index = device_list_search(conn_handle);
@@ -517,6 +548,7 @@ void app_aggregator_on_motion_config_data(uint16_t conn_handle, ble_thingy_motio
         m_schedule_device_list_print = true;
     }
 }
+*/
 
 void app_aggregator_on_quaternion_data(uint16_t conn_handle, ble_thingy_motion_quaternion_t quaternions)
 {

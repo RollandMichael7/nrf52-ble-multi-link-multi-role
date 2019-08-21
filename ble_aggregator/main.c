@@ -75,6 +75,7 @@
 #include "ble_thingy_weather_c.h"
 #include "ble_thingy_battery_c.h"
 #include "ble_thingy_motion_c.h"
+#include "ble_thingy_config_c.h"
 
 #define APP_BLE_CONN_CFG_TAG      1                                     /**< A tag that refers to the BLE stack configuration we set with @ref sd_ble_cfg_set. Default tag is @ref APP_BLE_CONN_CFG_TAG. */
 #define APP_BLE_OBSERVER_PRIO     3                                     /**< Application's BLE observer priority. You shouldn't need to modify this value. */
@@ -133,6 +134,7 @@ BLE_THINGY_UIS_C_ARRAY_DEF(m_thingy_uis_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT);
 BLE_THINGY_WEATHER_C_ARRAY_DEF(m_thingy_weather_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Weather Station client instances. */
 BLE_THINGY_MOTION_C_ARRAY_DEF(m_thingy_motion_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /** < Motion Service client instances. */
 BLE_THINGY_BATTERY_C_ARRAY_DEF(m_thingy_battery_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Battery service client instances. */
+BLE_THINGY_CONFIG_C_ARRAY_DEF(m_thingy_config_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Configuration service client instances. */
 BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc, NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 
 APP_TIMER_DEF(m_adv_led_blink_timer_id);
@@ -308,7 +310,8 @@ enum {APPCMD_ERROR, APPCMD_SET_LED_ALL, APPCMD_SET_LED_ON_OFF_ALL,
       APPCMD_POST_CONNECT_MESSAGE, APPCMD_DISCONNECT_PERIPHERALS,
       APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, 
       APPCMD_WEATHER_CONFIG_WRITE, APPCMD_MOTION_CONFIG_READ, 
-      APPCMD_MOTION_CONFIG_WRITE};
+      APPCMD_MOTION_CONFIG_WRITE, APPCMD_WEATHER_SENSOR_SET,
+      APPCMD_CONN_PARAM_READ, APPCMD_CONN_PARAM_WRITE};
 
 
 static volatile uint32_t agg_cmd_received = 0;
@@ -508,7 +511,35 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
             break;
     }
 }
-    
+  
+/**@brief Handles events coming from the Thingy Configuration central module.
+ *
+ * @param[in] p_thingy_config_c     The instance of THINGY_CONFIG_C that triggered the event.
+ * @param[in] p_thingy_config_c_evt The THINGY_CONFIG_C event.
+ */
+static void thingy_config_c_evt_handler(ble_thingy_config_c_t * p_thingy_config_c, ble_thingy_config_c_evt_t * p_thingy_config_c_evt)
+{
+    ret_code_t err_code;
+    switch (p_thingy_config_c_evt->evt_type)
+    {
+        case BLE_THINGY_CONFIG_C_EVT_DISCOVERY_COMPLETE:
+        {
+           // no module to discover
+
+        } break;
+
+        case BLE_THINGY_CONFIG_C_EVT_CONNECTION_PARAM_READING:
+        {
+            // Forward the data to the app aggregator module
+            app_aggregator_on_conn_param_data(p_thingy_config_c_evt->conn_handle, p_thingy_config_c_evt->params.conn_params);
+        } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
 /**@brief Handles events coming from the Thingy Battery central module.
  *
  * @param[in] p_thingy_battery_c     The instance of THINGY_BATTERY_C that triggered the event.
@@ -626,10 +657,6 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
-        case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
-        {
-            app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
-        } break;
         case BLE_THINGY_WEATHER_C_EVT_TEMPERATURE_NOTIFICATION:
         {
            app_aggregator_on_temperature_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.temperature);
@@ -648,6 +675,12 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
             app_aggregator_on_gas_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.gas);
         } break;
 
+        case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
+        {
+            NRF_LOG_INFO("weather config reading");
+            app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
+        } break;
+
         default:
             // No implementation needed.
             break;
@@ -664,7 +697,7 @@ static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_
     ret_code_t err_code;
     switch (p_thingy_motion_c_evt->evt_type)
     {
-        case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
+        case BLE_THINGY_MOTION_C_EVT_DISCOVERY_COMPLETE:
         {
             NRF_LOG_INFO("Thingy Motion service discovered on conn_handle 0x%x", p_thingy_motion_c_evt->conn_handle);            
             // Thingy Motion service discovered. Enable notification of characteristics.
@@ -685,10 +718,12 @@ static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
+        /*
         case BLE_THINGY_MOTION_C_EVT_CONFIG_READING:
         {
             app_aggregator_on_motion_config_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.config);
         } break;
+        */
         case BLE_THINGY_MOTION_C_EVT_QUATERNION_NOTIFICATION:
         {
            app_aggregator_on_quaternion_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.quaternion);
@@ -890,6 +925,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                                                                         p_gap_evt->conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         err_code = ble_thingy_battery_c_handles_assign(&m_thingy_battery_c[p_gap_evt->conn_handle],
+                                                                        p_gap_evt->conn_handle, NULL);
+                        APP_ERROR_CHECK(err_code);
+                        err_code = ble_thingy_motion_c_handles_assign(&m_thingy_motion_c[p_gap_evt->conn_handle],
+                                                                        p_gap_evt->conn_handle, NULL);
+                        APP_ERROR_CHECK(err_code);
+                        err_code = ble_thingy_config_c_handles_assign(&m_thingy_config_c[p_gap_evt->conn_handle],
                                                                         p_gap_evt->conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         break;
@@ -1177,6 +1218,20 @@ static void thingy_motion_c_init(void)
 }
 */
 
+/**@brief Configuration collector initialization */
+static void thingy_config_c_init(void)
+{
+    ret_code_t       err_code;
+    ble_thingy_config_c_init_t thingy_config_c_init_obj;
+
+    thingy_config_c_init_obj.evt_handler = thingy_config_c_evt_handler;
+
+    for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
+    {
+        err_code = ble_thingy_config_c_init(&m_thingy_config_c[i], &thingy_config_c_init_obj);
+        APP_ERROR_CHECK(err_code);
+    }
+}
 
 /**@brief Battery collector initialization */
 static void thingy_battery_c_init(void)
@@ -1505,6 +1560,8 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
     ble_lbs_on_db_disc_evt(&m_lbs_c[p_evt->conn_handle], p_evt);
     ble_thingy_uis_on_db_disc_evt(&m_thingy_uis_c[p_evt->conn_handle], p_evt);
     ble_thingy_weather_on_db_disc_evt(&m_thingy_weather_c[p_evt->conn_handle], p_evt);
+    ble_thingy_motion_on_db_disc_evt(&m_thingy_motion_c[p_evt->conn_handle], p_evt);
+    ble_thingy_config_on_db_disc_evt(&m_thingy_config_c[p_evt->conn_handle], p_evt);
 }
 
 
@@ -1689,7 +1746,7 @@ static void gatt_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-/**@brief Function for configuring a Thingy node's Weather Station sensors from an app command.
+/**@brief Function for writing a Thingy node's Weather Station configuration from an app command.
  */
 static void write_weather_config(uint8_t* cmd) {
     uint8_t id = cmd[0];
@@ -1710,6 +1767,24 @@ static void write_weather_config(uint8_t* cmd) {
         .led_blue = 0
     };
     ble_thingy_weather_c_configuration_send(p_ble_thingy_weather_c, &config);
+}
+
+/**@brief Function for writing a Thingy node's connection parameters from an app command.
+ */
+static void write_conn_param(uint8_t* cmd) {
+    uint8_t id = cmd[0];
+    ble_thingy_config_c_t *p_ble_thingy_config_c = &(m_thingy_config_c[id]);
+    uint16_t min = (cmd[1]) | (cmd[2] << 8);
+    uint16_t max = (cmd[3]) | (cmd[4] << 8);
+    uint16_t latency = (cmd[5]) | (cmd[6] << 8);
+    uint16_t timeout = (cmd[7]) | (cmd[8] << 8);
+    ble_thingy_config_conn_param_t config = {
+        .max_interval = max,
+        .min_interval = min,
+        .slave_latency = latency,
+        .sup_timeout = timeout
+    };
+    ble_thingy_config_c_conn_param_send(p_ble_thingy_config_c, &config);
 }
 
 static void process_app_commands()
@@ -1754,8 +1829,23 @@ static void process_app_commands()
             case APPCMD_WEATHER_CONFIG_WRITE:
                 write_weather_config(agg_cmd);
                 break;
+            /*
             case APPCMD_MOTION_CONFIG_READ:
                 ble_thingy_motion_c_configuration_read(&(m_thingy_motion_c[agg_cmd[0]]));
+                break;
+            case APPCMD_MOTION_CONFIG_WRITE:
+                // not implemented yet
+                break;
+            */
+            case APPCMD_WEATHER_SENSOR_SET:
+                ble_thingy_weather_c_sensor_set(&(m_thingy_weather_c[agg_cmd[0]]), agg_cmd[1], agg_cmd[2]);
+                break;
+            case APPCMD_CONN_PARAM_READ:
+                ble_thingy_config_c_conn_param_read(&(m_thingy_config_c[agg_cmd[0]]));
+                break;
+            case APPCMD_CONN_PARAM_WRITE:
+                write_conn_param(agg_cmd);
+                break;
             default:
                 break;
         }
@@ -1784,6 +1874,7 @@ int main(void)
     thingy_weather_c_init();
     //thingy_motion_c_init();
     thingy_battery_c_init();
+    thingy_config_c_init();
     thingy_battery_timer_start();
     ble_conn_state_init();
     advertising_data_set();
