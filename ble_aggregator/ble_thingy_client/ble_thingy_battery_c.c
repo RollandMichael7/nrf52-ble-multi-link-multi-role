@@ -124,7 +124,7 @@ static void on_read_rsp(ble_thingy_battery_c_t * p_ble_thingy_battery_c, ble_evt
     while( sd_ble_gattc_evt_char_val_by_uuid_read_rsp_iter(&p_ble_evt->evt.gattc_evt, &iter) == NRF_SUCCESS) {
         NRF_LOG_DEBUG("Battery level for conn %x: %d", p_ble_thingy_battery_c->conn_handle, *iter.p_value);
         evt.params.battery.value = *iter.p_value;
-        p_ble_thingy_battery_c->evt_handler(&p_ble_thingy_battery_c, &evt);
+        p_ble_thingy_battery_c->evt_handler(p_ble_thingy_battery_c, &evt);
     }
     tx_buffer_process();
 }
