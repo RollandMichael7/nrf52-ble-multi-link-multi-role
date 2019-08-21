@@ -82,7 +82,7 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 #define THINGY_MOTION_UUID_EULER       0x0407
 #define THINGY_MOTION_UUID_HEADING     0x0409
 
-/**@brief THINGY_UIS Client event type. */
+/**@brief THINGY_MOTION Client event type. */
 typedef enum
 {
     BLE_THINGY_MOTION_C_EVT_DISCOVERY_COMPLETE = 1,  /**< Event indicating that the Motions Service has been discovered at the peer. */
