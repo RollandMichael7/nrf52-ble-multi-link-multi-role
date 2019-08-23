@@ -139,11 +139,17 @@ static void on_write_rsp(ble_thingy_config_c_t * p_ble_thingy_config_c, ble_evt_
 
 static void on_read_rsp(ble_thingy_config_c_t * p_ble_thingy_config_c, ble_evt_t const * p_ble_evt)
 {
+    if (p_ble_evt->evt.gattc_evt.params.read_rsp.len != 8)
+        return;
     // Check if the event is on the link for this instance
     if (p_ble_thingy_config_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
         return;
 
     ble_thingy_config_conn_param_t params;
+    uint8_t *data = p_ble_evt->evt.gattc_evt.params.read_rsp.data;
+    //NRF_LOG_INFO("config len: %d", p_ble_evt->evt.gattc_evt.params.read_rsp.len);
+    //NRF_LOG_INFO("config: %d %d %d %d", data[0], data[1], data[2], data[3]); 
+    //NRF_LOG_INFO("%d %d %d %d", data[4], data[5], data[6], data[7]); 
     memcpy(&params, p_ble_evt->evt.gattc_evt.params.read_rsp.data, p_ble_evt->evt.gattc_evt.params.read_rsp.len);
     
     ble_thingy_config_c_evt_t evt;

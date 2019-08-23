@@ -139,6 +139,8 @@ static void on_write_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_ev
 
 static void on_read_rsp(ble_thingy_weather_c_t * p_ble_thingy_weather_c, ble_evt_t const * p_ble_evt)
 {
+    if (p_ble_evt->evt.gattc_evt.params.read_rsp.len != 12)
+        return;
     // Check if the event is on the link for this instance
     if (p_ble_thingy_weather_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
         return;
