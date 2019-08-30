@@ -474,6 +474,7 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
                 err_code = ble_lbs_c_button_notif_enable(p_lbs_c);
                 APP_ERROR_CHECK(err_code);
             
+                /*
                 ble_gap_conn_params_t conn_params;
                 conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
                 conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
@@ -481,7 +482,7 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
                 conn_params.conn_sup_timeout  = SUPERVISION_TIMEOUT;
 
                 sd_ble_gap_conn_param_update(p_lbs_c_evt->conn_handle, &conn_params);
-                
+                */
                 scan_start(m_scan_mode_coded_phy);
             } 
             break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
@@ -519,13 +520,18 @@ static void lbs_c_evt_handler(ble_lbs_c_t * p_lbs_c, ble_lbs_c_evt_t * p_lbs_c_e
  */
 static void thingy_config_c_evt_handler(ble_thingy_config_c_t * p_thingy_config_c, ble_thingy_config_c_evt_t * p_thingy_config_c_evt)
 {
+    //NRF_LOG_INFO("config evt!!");
     ret_code_t err_code;
     switch (p_thingy_config_c_evt->evt_type)
     {
         case BLE_THINGY_CONFIG_C_EVT_DISCOVERY_COMPLETE:
         {
-           // no module to discover
-
+            ble_thingy_config_conn_param_t conn_params;
+            conn_params.max_interval = 3200;
+            conn_params.min_interval = 1600;
+            conn_params.slave_latency = 0;
+            conn_params.sup_timeout = 320;
+            ble_thingy_config_c_conn_param_send(p_thingy_config_c, &conn_params);
         } break;
 
         case BLE_THINGY_CONFIG_C_EVT_CONNECTION_PARAM_READING:
@@ -553,7 +559,6 @@ static void thingy_battery_c_evt_handler(ble_thingy_battery_c_t * p_thingy_batte
         case BLE_LBS_C_EVT_DISCOVERY_COMPLETE:
         {
            // no module to discover
-
         } break;
 
         case BLE_THINGY_BATTERY_C_EVT_NOTIFICATION:
@@ -588,6 +593,7 @@ static void thingy_uis_c_evt_handler(ble_thingy_uis_c_t * p_thingy_uis_c, ble_th
             
             ble_thingy_uis_led_set_constant(p_thingy_uis_c, 255, 255, 255);
             
+            /*
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
             conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
@@ -595,7 +601,7 @@ static void thingy_uis_c_evt_handler(ble_thingy_uis_c_t * p_thingy_uis_c, ble_th
             conn_params.conn_sup_timeout  = SUPERVISION_TIMEOUT;
 
             sd_ble_gap_conn_param_update(p_thingy_uis_c_evt->conn_handle, &conn_params);
-            
+            */
             scan_start(m_scan_mode_coded_phy);
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
@@ -620,6 +626,7 @@ static void thingy_uis_c_evt_handler(ble_thingy_uis_c_t * p_thingy_uis_c, ble_th
  */
 static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weather_c, ble_thingy_weather_c_evt_t * p_thingy_weather_c_evt)
 {
+    //NRF_LOG_INFO("weather evt!!");
     ret_code_t err_code;
     switch (p_thingy_weather_c_evt->evt_type)
     {
@@ -645,6 +652,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
             APP_ERROR_CHECK(ble_thingy_weather_c_gas_notif_enable(p_thingy_weather_c));
             //APP_ERROR_CHECK(ble_thingy_weather_c_configuration_send(p_thingy_weather_c, &config));
 
+            /*
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
             conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
@@ -652,7 +660,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
             conn_params.conn_sup_timeout  = SUPERVISION_TIMEOUT;
 
             sd_ble_gap_conn_param_update(p_thingy_weather_c_evt->conn_handle, &conn_params);
-            
+            */
             scan_start(m_scan_mode_coded_phy);
 
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
@@ -661,14 +669,17 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
         {
            app_aggregator_on_temperature_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.temperature);
         } break;
+
         case BLE_THINGY_WEATHER_C_EVT_PRESSURE_NOTIFICATION:
         {
            app_aggregator_on_pressure_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.pressure);
         } break;
+
         case BLE_THINGY_WEATHER_C_EVT_HUMIDITY_NOTIFICATION:
         {
             app_aggregator_on_humidity_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.humidity);
         } break;
+
         case BLE_THINGY_WEATHER_C_EVT_GAS_NOTIFICATION:
         {
             // Forward the data to the app aggregator module
@@ -677,7 +688,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
 
         case BLE_THINGY_WEATHER_C_EVT_CONFIG_READING:
         {
-            NRF_LOG_INFO("weather config reading");
+            NRF_LOG_INFO("weather config reading!!");
             app_aggregator_on_env_config_data(p_thingy_weather_c_evt->conn_handle, p_thingy_weather_c_evt->params.config);
         } break;
 
@@ -694,6 +705,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
  */
 static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_c, ble_thingy_motion_c_evt_t * p_thingy_motion_c_evt)
 {
+    NRF_LOG_INFO("motion evt!!");
     ret_code_t err_code;
     switch (p_thingy_motion_c_evt->evt_type)
     {
@@ -701,11 +713,12 @@ static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_
         {
             NRF_LOG_INFO("Thingy Motion service discovered on conn_handle 0x%x", p_thingy_motion_c_evt->conn_handle);            
             // Thingy Motion service discovered. Enable notification of characteristics.
-            APP_ERROR_CHECK(ble_thingy_motion_c_quaternion_notif_enable(p_thingy_motion_c));
-            APP_ERROR_CHECK(ble_thingy_motion_c_raw_notif_enable(p_thingy_motion_c));
-            APP_ERROR_CHECK(ble_thingy_motion_c_euler_notif_enable(p_thingy_motion_c));
-            APP_ERROR_CHECK(ble_thingy_motion_c_heading_notif_enable(p_thingy_motion_c));
+            //APP_ERROR_CHECK(ble_thingy_motion_c_quaternion_notif_enable(p_thingy_motion_c));
+            //APP_ERROR_CHECK(ble_thingy_motion_c_raw_notif_enable(p_thingy_motion_c));
+            //APP_ERROR_CHECK(ble_thingy_motion_c_euler_notif_enable(p_thingy_motion_c));
+            //APP_ERROR_CHECK(ble_thingy_motion_c_heading_notif_enable(p_thingy_motion_c));
 
+            /*
             ble_gap_conn_params_t conn_params;
             conn_params.max_conn_interval = MAX_CONNECTION_INTERVAL;
             conn_params.min_conn_interval = MIN_CONNECTION_INTERVAL;
@@ -715,15 +728,15 @@ static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_
             sd_ble_gap_conn_param_update(p_thingy_motion_c_evt->conn_handle, &conn_params);
             
             scan_start(m_scan_mode_coded_phy);
-
+            */
         } break; // BLE_LBS_C_EVT_DISCOVERY_COMPLETE
 
-        /*
+        
         case BLE_THINGY_MOTION_C_EVT_CONFIG_READING:
         {
             app_aggregator_on_motion_config_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.config);
         } break;
-        */
+        
         case BLE_THINGY_MOTION_C_EVT_QUATERNION_NOTIFICATION:
         {
            app_aggregator_on_quaternion_data(p_thingy_motion_c_evt->conn_handle, p_thingy_motion_c_evt->params.quaternion);
@@ -1202,7 +1215,6 @@ static void thingy_weather_c_init(void)
 
 
 /**@brief Motion Service collector initialization */
-/*
 static void thingy_motion_c_init(void)
 {
     ret_code_t       err_code;
@@ -1216,7 +1228,6 @@ static void thingy_motion_c_init(void)
         APP_ERROR_CHECK(err_code);
     }
 }
-*/
 
 /**@brief Configuration collector initialization */
 static void thingy_config_c_init(void)
@@ -1823,29 +1834,37 @@ static void process_app_commands()
             case APPCMD_DISCONNECT_CENTRAL:
                 sd_ble_gap_disconnect(m_per_con_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
                 break;
+
             case APPCMD_WEATHER_CONFIG_READ:
+                //NRF_LOG_INFO("CMD read weather config");
                 ble_thingy_weather_c_configuration_read(&(m_thingy_weather_c[agg_cmd[0]]));
                 break;
+
             case APPCMD_WEATHER_CONFIG_WRITE:
                 write_weather_config(agg_cmd);
                 break;
-            /*
+
             case APPCMD_MOTION_CONFIG_READ:
                 ble_thingy_motion_c_configuration_read(&(m_thingy_motion_c[agg_cmd[0]]));
                 break;
+
             case APPCMD_MOTION_CONFIG_WRITE:
                 // not implemented yet
                 break;
-            */
+
             case APPCMD_WEATHER_SENSOR_SET:
                 ble_thingy_weather_c_sensor_set(&(m_thingy_weather_c[agg_cmd[0]]), agg_cmd[1], agg_cmd[2]);
                 break;
+
             case APPCMD_CONN_PARAM_READ:
+                //NRF_LOG_INFO("CMD read conn param");
                 ble_thingy_config_c_conn_param_read(&(m_thingy_config_c[agg_cmd[0]]));
                 break;
+
             case APPCMD_CONN_PARAM_WRITE:
                 write_conn_param(agg_cmd);
                 break;
+
             default:
                 break;
         }
@@ -1872,7 +1891,7 @@ int main(void)
     lbs_c_init();
     thingy_uis_c_init();
     thingy_weather_c_init();
-    //thingy_motion_c_init();
+    thingy_motion_c_init();
     thingy_battery_c_init();
     thingy_config_c_init();
     thingy_battery_timer_start();

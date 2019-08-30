@@ -107,14 +107,15 @@ static void tx_buffer_process(void)
         }
         if (err_code == NRF_SUCCESS)
         {
-            NRF_LOG_DEBUG("SD Read/Write API returns Success..");
+            NRF_LOG_INFO("SD Read/Write API returns Success..");
             m_tx_index++;
             m_tx_index &= TX_BUFFER_MASK;
         }
         else
         {
-            NRF_LOG_DEBUG("SD Read/Write API returns error. This message sending will be "
+            NRF_LOG_INFO("SD Read/Write API returns error. This message sending will be "
                 "attempted again..");
+            NRF_LOG_INFO("error code %d", err_code);
         }
     }
 }
@@ -136,9 +137,11 @@ static void on_write_rsp(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_
     tx_buffer_process();
 }
 
-/*
+
 static void on_read_rsp(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t const * p_ble_evt)
 {
+    if (p_ble_evt->evt.gattc_evt.params.read_rsp.len != 9)
+        return;
     // Check if the event is on the link for this instance
     if (p_ble_thingy_motion_c->conn_handle != p_ble_evt->evt.gattc_evt.conn_handle)
         return;
@@ -155,7 +158,7 @@ static void on_read_rsp(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t
     
     tx_buffer_process();
 }
-*/
+
 
 /**@brief Function for handling Handle Value Notification received from the SoftDevice.
  *
@@ -408,11 +411,9 @@ void ble_thingy_motion_c_on_ble_evt(ble_evt_t const * p_ble_evt, void * p_contex
             on_hvx(p_ble_thingy_motion_c, p_ble_evt);
             break;
         
-        /*
         case BLE_GATTC_EVT_READ_RSP:
             on_read_rsp(p_ble_thingy_motion_c, p_ble_evt);
             break;
-        */
 
         case BLE_GATTC_EVT_WRITE_RSP:
             on_write_rsp(p_ble_thingy_motion_c, p_ble_evt);
@@ -531,7 +532,7 @@ uint32_t ble_thingy_motion_c_handles_assign(ble_thingy_motion_c_t    * p_ble_thi
     return NRF_SUCCESS;
 }
 
-/*
+
 uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_thingy_motion_c) {
     VERIFY_PARAM_NOT_NULL(p_ble_thingy_motion_c);
 
@@ -551,4 +552,3 @@ uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_th
 
     return NRF_SUCCESS;
 }
-*/

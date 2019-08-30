@@ -325,7 +325,7 @@ void app_aggregator_data_update_gas(uint16_t device_index)
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
-/*
+
 void app_aggregator_data_update_motion_config(uint16_t device_index)
 {
     tx_command_payload[0] = AGG_BLE_MOTION_CONFIG;
@@ -343,7 +343,7 @@ void app_aggregator_data_update_motion_config(uint16_t device_index)
     tx_command_payload_length = 12;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
-*/
+
 
 void app_aggregator_data_update_quaternions(uint16_t device_index)
 {
@@ -472,7 +472,7 @@ void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level)
 }
 
 void app_aggregator_on_conn_param_data(uint16_t conn_handle, ble_thingy_config_conn_param_t params)
-{
+{ 
     uint16_t device_index = device_list_search(conn_handle);
     if(device_index != BLE_CONN_HANDLE_INVALID)
     {
@@ -537,7 +537,7 @@ void app_aggregator_on_gas_data(uint16_t conn_handle, ble_thingy_weather_gas_t g
     }
 }
 
-/*
+
 void app_aggregator_on_motion_config_data(uint16_t conn_handle, ble_thingy_motion_c_config_t config)
 {
     uint16_t device_index = device_list_search(conn_handle);
@@ -548,7 +548,7 @@ void app_aggregator_on_motion_config_data(uint16_t conn_handle, ble_thingy_motio
         m_schedule_device_list_print = true;
     }
 }
-*/
+
 
 void app_aggregator_on_quaternion_data(uint16_t conn_handle, ble_thingy_motion_quaternion_t quaternions)
 {
