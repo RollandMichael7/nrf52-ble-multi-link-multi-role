@@ -310,7 +310,7 @@ enum {APPCMD_ERROR, APPCMD_SET_LED_ALL, APPCMD_SET_LED_ON_OFF_ALL,
       APPCMD_POST_CONNECT_MESSAGE, APPCMD_DISCONNECT_PERIPHERALS,
       APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, 
       APPCMD_WEATHER_CONFIG_WRITE, APPCMD_MOTION_CONFIG_READ, 
-      APPCMD_MOTION_CONFIG_WRITE, APPCMD_WEATHER_SENSOR_SET,
+      APPCMD_MOTION_CONFIG_WRITE, APPCMD_SENSOR_SET,
       APPCMD_CONN_PARAM_READ, APPCMD_CONN_PARAM_WRITE};
 
 
@@ -705,7 +705,7 @@ static void thingy_weather_c_evt_handler(ble_thingy_weather_c_t * p_thingy_weath
  */
 static void thingy_motion_c_evt_handler(ble_thingy_motion_c_t * p_thingy_motion_c, ble_thingy_motion_c_evt_t * p_thingy_motion_c_evt)
 {
-    NRF_LOG_INFO("motion evt!!");
+    //NRF_LOG_INFO("motion evt!!");
     ret_code_t err_code;
     switch (p_thingy_motion_c_evt->evt_type)
     {
@@ -1852,8 +1852,11 @@ static void process_app_commands()
                 // not implemented yet
                 break;
 
-            case APPCMD_WEATHER_SENSOR_SET:
-                ble_thingy_weather_c_sensor_set(&(m_thingy_weather_c[agg_cmd[0]]), agg_cmd[1], agg_cmd[2]);
+            case APPCMD_SENSOR_SET:
+                if (agg_cmd[1] <= GAS_ID)
+                  ble_thingy_weather_c_sensor_set(&(m_thingy_weather_c[agg_cmd[0]]), agg_cmd[1], agg_cmd[2]);
+                else
+                  ble_thingy_motion_c_sensor_set(&(m_thingy_motion_c[agg_cmd[0]]), agg_cmd[1], agg_cmd[2]);
                 break;
 
             case APPCMD_CONN_PARAM_READ:

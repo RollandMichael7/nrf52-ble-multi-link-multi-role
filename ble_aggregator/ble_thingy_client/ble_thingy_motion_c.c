@@ -232,30 +232,29 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
     // Check if this is a euler notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.euler_handle)
     {
-        if (p_ble_evt->evt.gattc_evt.params.hvx.len == 1)
-        {
-            ble_thingy_motion_c_evt_t ble_thingy_motion_c_evt;
+        NRF_LOG_INFO("euler event");
+        ble_thingy_motion_c_evt_t ble_thingy_motion_c_evt;
 
-            ble_thingy_motion_c_evt.evt_type                   = BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION;
-            ble_thingy_motion_c_evt.conn_handle                = p_ble_thingy_motion_c->conn_handle;
-            ble_thingy_motion_c_evt.params.euler.roll[0]      = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
-            ble_thingy_motion_c_evt.params.euler.roll[1]      = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
-            ble_thingy_motion_c_evt.params.euler.roll[2]      = p_ble_evt->evt.gattc_evt.params.hvx.data[2];
-            ble_thingy_motion_c_evt.params.euler.roll[3]      = p_ble_evt->evt.gattc_evt.params.hvx.data[3];
-            ble_thingy_motion_c_evt.params.euler.pitch[0]     = p_ble_evt->evt.gattc_evt.params.hvx.data[4];
-            ble_thingy_motion_c_evt.params.euler.pitch[1]     = p_ble_evt->evt.gattc_evt.params.hvx.data[5];
-            ble_thingy_motion_c_evt.params.euler.pitch[2]     = p_ble_evt->evt.gattc_evt.params.hvx.data[6];
-            ble_thingy_motion_c_evt.params.euler.pitch[3]     = p_ble_evt->evt.gattc_evt.params.hvx.data[7];
-            ble_thingy_motion_c_evt.params.euler.yaw[0]       = p_ble_evt->evt.gattc_evt.params.hvx.data[8];
-            ble_thingy_motion_c_evt.params.euler.yaw[1]       = p_ble_evt->evt.gattc_evt.params.hvx.data[9];
-            ble_thingy_motion_c_evt.params.euler.yaw[2]       = p_ble_evt->evt.gattc_evt.params.hvx.data[10];
-            ble_thingy_motion_c_evt.params.euler.yaw[3]       = p_ble_evt->evt.gattc_evt.params.hvx.data[11];
-            p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
-        }
+        ble_thingy_motion_c_evt.evt_type                   = BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION;
+        ble_thingy_motion_c_evt.conn_handle                = p_ble_thingy_motion_c->conn_handle;
+        ble_thingy_motion_c_evt.params.euler.roll[0]      = p_ble_evt->evt.gattc_evt.params.hvx.data[0];
+        ble_thingy_motion_c_evt.params.euler.roll[1]      = p_ble_evt->evt.gattc_evt.params.hvx.data[1];
+        ble_thingy_motion_c_evt.params.euler.roll[2]      = p_ble_evt->evt.gattc_evt.params.hvx.data[2];
+        ble_thingy_motion_c_evt.params.euler.roll[3]      = p_ble_evt->evt.gattc_evt.params.hvx.data[3];
+        ble_thingy_motion_c_evt.params.euler.pitch[0]     = p_ble_evt->evt.gattc_evt.params.hvx.data[4];
+        ble_thingy_motion_c_evt.params.euler.pitch[1]     = p_ble_evt->evt.gattc_evt.params.hvx.data[5];
+        ble_thingy_motion_c_evt.params.euler.pitch[2]     = p_ble_evt->evt.gattc_evt.params.hvx.data[6];
+        ble_thingy_motion_c_evt.params.euler.pitch[3]     = p_ble_evt->evt.gattc_evt.params.hvx.data[7];
+        ble_thingy_motion_c_evt.params.euler.yaw[0]       = p_ble_evt->evt.gattc_evt.params.hvx.data[8];
+        ble_thingy_motion_c_evt.params.euler.yaw[1]       = p_ble_evt->evt.gattc_evt.params.hvx.data[9];
+        ble_thingy_motion_c_evt.params.euler.yaw[2]       = p_ble_evt->evt.gattc_evt.params.hvx.data[10];
+        ble_thingy_motion_c_evt.params.euler.yaw[3]       = p_ble_evt->evt.gattc_evt.params.hvx.data[11];
+        p_ble_thingy_motion_c->evt_handler(p_ble_thingy_motion_c, &ble_thingy_motion_c_evt);
     }
     // Check if this is a heading notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.heading_handle)
     {
+        NRF_LOG_INFO("heading evt");
         ble_thingy_motion_c_evt_t ble_thingy_motion_c_evt;
 
         ble_thingy_motion_c_evt.evt_type                   = BLE_THINGY_MOTION_C_EVT_HEADING_NOTIFICATION;
@@ -462,6 +461,35 @@ static uint32_t cccd_configure(uint16_t conn_handle, uint16_t handle_cccd, bool 
     return NRF_SUCCESS;
 }
 
+uint32_t ble_thingy_motion_c_sensor_set(ble_thingy_motion_c_t * p_ble_thingy_motion_c, uint8_t sensor_id, uint8_t val)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_motion_c);
+    
+    if (p_ble_thingy_motion_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+
+    uint16_t handle_cccd;
+    switch(sensor_id) {
+        case QUATERNION_ID:
+          handle_cccd = p_ble_thingy_motion_c->peer_thingy_motion_db.quaternion_cccd_handle;
+          break;
+        case RAW_ID:
+          handle_cccd = p_ble_thingy_motion_c->peer_thingy_motion_db.raw_cccd_handle;
+          break;
+        case EULER_ID:
+          handle_cccd = p_ble_thingy_motion_c->peer_thingy_motion_db.euler_cccd_handle;
+          break;
+        case HEADING_ID:
+          handle_cccd = p_ble_thingy_motion_c->peer_thingy_motion_db.heading_cccd_handle;
+          break;
+        default:
+          return NRF_ERROR_INVALID_DATA;
+    }
+    return cccd_configure(p_ble_thingy_motion_c->conn_handle, handle_cccd, val);
+}
+
 uint32_t ble_thingy_motion_c_quaternion_notif_enable(ble_thingy_motion_c_t * p_ble_thingy_motion_c)
 {
     VERIFY_PARAM_NOT_NULL(p_ble_thingy_motion_c);
@@ -539,8 +567,6 @@ uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_th
     if (p_ble_thingy_motion_c->conn_handle == BLE_CONN_HANDLE_INVALID) {
         return NRF_ERROR_INVALID_STATE;
     }
-
-    NRF_LOG_INFO("reading Thingy motion configuration");
 
     tx_message_t * p_msg = &m_tx_buffer[m_tx_insert_index++];
     m_tx_insert_index &= TX_BUFFER_MASK;

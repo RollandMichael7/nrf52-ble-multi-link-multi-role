@@ -82,6 +82,13 @@ NRF_SDH_BLE_OBSERVERS(_name ## _obs,                                            
 #define THINGY_MOTION_UUID_EULER       0x0407
 #define THINGY_MOTION_UUID_HEADING     0x0409
 
+
+/**@brief Sensor IDs for toggling sensors through app commands. */
+#define QUATERNION_ID 41
+#define RAW_ID 42
+#define EULER_ID 43
+#define HEADING_ID 44
+
 /**@brief THINGY_MOTION Client event type. */
 typedef enum
 {
@@ -264,6 +271,8 @@ void ble_thingy_motion_on_db_disc_evt(ble_thingy_motion_c_t * p_ble_thingy_motio
 uint32_t ble_thingy_motion_c_handles_assign(ble_thingy_motion_c_t *    p_ble_thingy_motion_c,
                                   uint16_t         conn_handle,
                                   const thingy_motion_db_t * p_peer_handles);
+
+uint32_t ble_thingy_motion_c_sensor_set(ble_thingy_motion_c_t * p_ble_thingy_motion_c, uint8_t sensor_id, uint8_t val);
 
 uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_thingy_motion_c);
 
