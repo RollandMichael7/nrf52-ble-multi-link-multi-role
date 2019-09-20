@@ -560,6 +560,45 @@ uint32_t ble_thingy_motion_c_handles_assign(ble_thingy_motion_c_t    * p_ble_thi
     return NRF_SUCCESS;
 }
 
+uint32_t ble_thingy_motion_c_configuration_send(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_thingy_motion_c_config_t * config)
+{
+    VERIFY_PARAM_NOT_NULL(p_ble_thingy_motion_c);
+
+    if (p_ble_thingy_motion_c->conn_handle == BLE_CONN_HANDLE_INVALID)
+    {
+        return NRF_ERROR_INVALID_STATE;
+    }
+    
+    NRF_LOG_INFO("writing Thingy motion configuration: %i, %i, %i, %i, %i", (int)config->step_interval, (int)config->temp_compensation_interval,
+        (int)config->magnet_compensation_interval, (int)config->frequency, (int)config->wake_on_motion);
+    tx_message_t * p_msg;
+
+    p_msg              = &m_tx_buffer[m_tx_insert_index++];
+    m_tx_insert_index &= TX_BUFFER_MASK;
+
+    p_msg->req.write_req.gattc_params.handle   = p_ble_thingy_motion_c->peer_thingy_motion_db.config_handle;
+    p_msg->req.write_req.gattc_params.len      = 9;
+    p_msg->req.write_req.gattc_params.p_value  = p_msg->req.write_req.gattc_value;
+    p_msg->req.write_req.gattc_params.offset   = 0;
+    p_msg->req.write_req.gattc_params.write_op = BLE_GATT_OP_WRITE_REQ;
+    p_msg->req.write_req.gattc_value[0] = LSB_16(config->step_interval);
+    p_msg->req.write_req.gattc_value[1] = MSB_16(config->step_interval);
+    p_msg->req.write_req.gattc_value[2] = LSB_16(config->temp_compensation_interval);
+    p_msg->req.write_req.gattc_value[3] = MSB_16(config->temp_compensation_interval);
+    p_msg->req.write_req.gattc_value[4] = LSB_16(config->magnet_compensation_interval);
+    p_msg->req.write_req.gattc_value[5] = MSB_16(config->magnet_compensation_interval);
+    p_msg->req.write_req.gattc_value[6] = LSB_16(config->frequency);
+    p_msg->req.write_req.gattc_value[7] = MSB_16(config->frequency);
+    p_msg->req.write_req.gattc_value[8] = LSB_16(config->wake_on_motion);
+    //memcpy(p_msg->req.write_req.gattc_value, (void *)config, 9);
+    p_msg->conn_handle                         = p_ble_thingy_motion_c->conn_handle;
+    p_msg->type                                = WRITE_REQ;
+
+    tx_buffer_process();
+
+    return NRF_SUCCESS;
+}
+
 
 uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_thingy_motion_c) {
     VERIFY_PARAM_NOT_NULL(p_ble_thingy_motion_c);

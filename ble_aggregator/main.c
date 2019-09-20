@@ -1780,6 +1780,26 @@ static void write_weather_config(uint8_t* cmd) {
     ble_thingy_weather_c_configuration_send(p_ble_thingy_weather_c, &config);
 }
 
+/**@brief Function for writing a Thingy node's Motion Service configuration from an app command.
+ */
+static void write_motion_config(uint8_t* cmd) {
+    uint8_t id = cmd[0];
+    ble_thingy_motion_c_t *p_ble_thingy_motion_c = &(m_thingy_motion_c[id]);
+    uint16_t step = (cmd[1]) | (cmd[2] << 8);
+    uint16_t temp_comp = (cmd[3]) | (cmd[4] << 8);
+    uint16_t mag_comp = (cmd[5]) | (cmd[6] << 8);
+    uint16_t freq = (cmd[7]) | (cmd[8] << 8);
+    uint8_t wake = agg_cmd[9];
+    ble_thingy_motion_c_config_t config = {
+        .step_interval = step,
+        .temp_compensation_interval = temp_comp,
+        .magnet_compensation_interval = mag_comp,
+        .frequency = freq,
+        .wake_on_motion = wake
+    };
+    ble_thingy_motion_c_configuration_send(p_ble_thingy_motion_c, &config);
+}
+
 /**@brief Function for writing a Thingy node's connection parameters from an app command.
  */
 static void write_conn_param(uint8_t* cmd) {
@@ -1849,7 +1869,7 @@ static void process_app_commands()
                 break;
 
             case APPCMD_MOTION_CONFIG_WRITE:
-                // not implemented yet
+                write_motion_config(agg_cmd);
                 break;
 
             case APPCMD_SENSOR_SET:

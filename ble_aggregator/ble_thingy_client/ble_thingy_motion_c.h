@@ -275,6 +275,8 @@ uint32_t ble_thingy_motion_c_handles_assign(ble_thingy_motion_c_t *    p_ble_thi
 uint32_t ble_thingy_motion_c_sensor_set(ble_thingy_motion_c_t * p_ble_thingy_motion_c, uint8_t sensor_id, uint8_t val);
 
 uint32_t ble_thingy_motion_c_configuration_read(ble_thingy_motion_c_t * p_ble_thingy_motion_c);
+uint32_t ble_thingy_motion_c_configuration_send(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_thingy_motion_c_config_t * config);
+
 
 #ifdef __cplusplus
 }
