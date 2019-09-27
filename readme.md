@@ -1,4 +1,4 @@
-# Bluetooth 5 multi link demo
+# Expanded Bluetooth 5 Multi Link Demo
 
 An edited version of [Nordic's firmware for the NRF52 DK](https://github.com/NordicPlayground/nrf52-ble-multi-link-multi-role) to 
 include support for reading more of the Thingy node's sensors. Meant to be used in conjunction with a corresponding 
