@@ -135,6 +135,7 @@ BLE_THINGY_WEATHER_C_ARRAY_DEF(m_thingy_weather_c, NRF_SDH_BLE_CENTRAL_LINK_COUN
 BLE_THINGY_MOTION_C_ARRAY_DEF(m_thingy_motion_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /** < Motion Service client instances. */
 BLE_THINGY_BATTERY_C_ARRAY_DEF(m_thingy_battery_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Battery service client instances. */
 BLE_THINGY_CONFIG_C_ARRAY_DEF(m_thingy_config_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< Configuration service client instances. */
+BLE_THINGY_IO_C_ARRAY_DEF(m_thingy_io_c, NRF_SDH_BLE_CENTRAL_LINK_COUNT); /**< IO service client instances. */
 BLE_DB_DISCOVERY_ARRAY_DEF(m_db_disc, NRF_SDH_BLE_CENTRAL_LINK_COUNT);  /**< Database discovery module instances. */
 
 APP_TIMER_DEF(m_adv_led_blink_timer_id);
@@ -311,7 +312,8 @@ enum {APPCMD_ERROR, APPCMD_SET_LED_ALL, APPCMD_SET_LED_ON_OFF_ALL,
       APPCMD_DISCONNECT_CENTRAL, APPCMD_WEATHER_CONFIG_READ, 
       APPCMD_WEATHER_CONFIG_WRITE, APPCMD_MOTION_CONFIG_READ, 
       APPCMD_MOTION_CONFIG_WRITE, APPCMD_SENSOR_SET,
-      APPCMD_CONN_PARAM_READ, APPCMD_CONN_PARAM_WRITE};
+      APPCMD_CONN_PARAM_READ, APPCMD_CONN_PARAM_WRITE, APPCMD_IO_READ,
+      APPCMD_IO_WRITE};
 
 
 static volatile uint32_t agg_cmd_received = 0;
@@ -538,6 +540,36 @@ static void thingy_config_c_evt_handler(ble_thingy_config_c_t * p_thingy_config_
         {
             // Forward the data to the app aggregator module
             app_aggregator_on_conn_param_data(p_thingy_config_c_evt->conn_handle, p_thingy_config_c_evt->params.conn_params);
+        } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
+
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+/**@brief Handles events coming from the Thingy IO central module.
+ *
+ * @param[in] p_thingy_io_c     The instance of THINGY_IO_C that triggered the event.
+ * @param[in] p_thingy_io_c_evt The THINGY_IO_C event.
+ */
+static void thingy_io_c_evt_handler(ble_thingy_io_c_t * p_thingy_io_c, ble_thingy_io_c_evt_t * p_thingy_io_c_evt)
+{
+    NRF_LOG_INFO("IO evt!!");
+    ret_code_t err_code;
+    switch (p_thingy_io_c_evt->evt_type)
+    {
+        case BLE_THINGY_IO_C_EVT_DISCOVERY_COMPLETE:
+        {
+            NRF_LOG_INFO("IO service discovered on conn_handle 0x%x", p_thingy_io_c_evt->conn_handle); 
+            ble_thingy_io_c_read(p_thingy_io_c);
+        } break;
+
+        case BLE_THINGY_IO_C_EVT_READING:
+        {
+            NRF_LOG_INFO("IO reading received");
+            // Forward the data to the app aggregator module
+            app_aggregator_on_io_data(p_thingy_io_c_evt->conn_handle, p_thingy_io_c_evt->params.pins);
         } break; // BLE_LBS_C_EVT_BUTTON_NOTIFICATION
 
         default:
@@ -915,36 +947,42 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                         peer_addr_LR[p_gap_evt->conn_handle][4],
                         peer_addr_LR[p_gap_evt->conn_handle][5]);
 
+                uint16_t conn_handle;
+                conn_handle = p_gap_evt->conn_handle;
+
                 NRF_LOG_INFO("Connection 0x%x established , starting DB discovery.",
-                             p_gap_evt->conn_handle);
+                             conn_handle);
 
-                memcpy(&peer_addr_LR[p_gap_evt->conn_handle][0], &p_gap_evt->params.connected.peer_addr.addr[0], 6);
+                memcpy(&peer_addr_LR[conn_handle][0], &p_gap_evt->params.connected.peer_addr.addr[0], 6);
 
-                //APP_ERROR_CHECK_BOOL(p_gap_evt->conn_handle < NRF_SDH_BLE_CENTRAL_LINK_COUNT);
+                //APP_ERROR_CHECK_BOOL(conn_handle < NRF_SDH_BLE_CENTRAL_LINK_COUNT);
 
                 switch(m_device_being_connected_info.dev_type)
                 {
                     case DEVTYPE_BLINKY:
-                        err_code = ble_lbs_c_handles_assign(&m_lbs_c[p_gap_evt->conn_handle],
-                                                            p_gap_evt->conn_handle, NULL);
+                        err_code = ble_lbs_c_handles_assign(&m_lbs_c[conn_handle],
+                                                            conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         break;
                     
                     case DEVTYPE_THINGY:
-                        err_code = ble_thingy_uis_c_handles_assign(&m_thingy_uis_c[p_gap_evt->conn_handle],
-                                                                   p_gap_evt->conn_handle, NULL);
+                        err_code = ble_thingy_uis_c_handles_assign(&m_thingy_uis_c[conn_handle],
+                                                                   conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
-                        err_code = ble_thingy_weather_c_handles_assign(&m_thingy_weather_c[p_gap_evt->conn_handle],
-                                                                        p_gap_evt->conn_handle, NULL);
+                        err_code = ble_thingy_weather_c_handles_assign(&m_thingy_weather_c[conn_handle],
+                                                                        conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
-                        err_code = ble_thingy_battery_c_handles_assign(&m_thingy_battery_c[p_gap_evt->conn_handle],
-                                                                        p_gap_evt->conn_handle, NULL);
+                        err_code = ble_thingy_battery_c_handles_assign(&m_thingy_battery_c[conn_handle],
+                                                                        conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
-                        err_code = ble_thingy_motion_c_handles_assign(&m_thingy_motion_c[p_gap_evt->conn_handle],
-                                                                        p_gap_evt->conn_handle, NULL);
+                        err_code = ble_thingy_motion_c_handles_assign(&m_thingy_motion_c[conn_handle],
+                                                                        conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
-                        err_code = ble_thingy_config_c_handles_assign(&m_thingy_config_c[p_gap_evt->conn_handle],
-                                                                        p_gap_evt->conn_handle, NULL);
+                        err_code = ble_thingy_config_c_handles_assign(&m_thingy_config_c[conn_handle],
+                                                                        conn_handle, NULL);
+                        APP_ERROR_CHECK(err_code);
+                        err_code = ble_thingy_io_c_handles_assign(&m_thingy_io_c[conn_handle],
+                                                                        conn_handle, NULL);
                         APP_ERROR_CHECK(err_code);
                         break;
                     
@@ -952,19 +990,19 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                         break;
                 }
 
-                m_service_discovery_conn_handle = p_gap_evt->conn_handle;
-                memset(&m_db_disc[p_gap_evt->conn_handle], 0x00, sizeof(ble_db_discovery_t));
-                err_code = ble_db_discovery_start(&m_db_disc[p_gap_evt->conn_handle],
-                                                  p_gap_evt->conn_handle);
+                m_service_discovery_conn_handle = conn_handle;
+                memset(&m_db_disc[conn_handle], 0x00, sizeof(ble_db_discovery_t));
+                err_code = ble_db_discovery_start(&m_db_disc[conn_handle],
+                                                  conn_handle);
                 if (err_code != NRF_ERROR_BUSY)
                 {
                     APP_ERROR_CHECK(err_code);
                 }
                 
-                err_code = sd_ble_gap_rssi_start(p_gap_evt->conn_handle, 5, 4);
+                err_code = sd_ble_gap_rssi_start(conn_handle, 5, 4);
                 APP_ERROR_CHECK(err_code);
 
-                err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN, p_gap_evt->conn_handle, APP_DEFAULT_TX_POWER);
+                err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_CONN, conn_handle, APP_DEFAULT_TX_POWER);
                 APP_ERROR_CHECK(err_code);
 
                 // Notify the aggregator service
@@ -988,7 +1026,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                 if(BLE_GAP_PHY_CODED == m_scan_params.scan_phys)
                 {
                     coded_phy_conn_count++;
-                    m_coded_phy_conn_handle[p_gap_evt->conn_handle] = p_gap_evt->conn_handle;
+                    m_coded_phy_conn_handle[conn_handle] = conn_handle;
                     bsp_board_led_on(CODED_PHY_LED);
                 }
             }
@@ -1240,6 +1278,21 @@ static void thingy_config_c_init(void)
     for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
     {
         err_code = ble_thingy_config_c_init(&m_thingy_config_c[i], &thingy_config_c_init_obj);
+        APP_ERROR_CHECK(err_code);
+    }
+}
+
+/**@brief IO collector initialization */
+static void thingy_io_c_init(void)
+{
+    ret_code_t       err_code;
+    ble_thingy_io_c_init_t thingy_io_c_init_obj;
+
+    thingy_io_c_init_obj.evt_handler = thingy_io_c_evt_handler;
+
+    for (uint32_t i = 0; i < NRF_SDH_BLE_CENTRAL_LINK_COUNT; i++)
+    {
+        err_code = ble_thingy_io_c_init(&m_thingy_io_c[i], &thingy_io_c_init_obj);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -1573,6 +1626,7 @@ static void db_disc_handler(ble_db_discovery_evt_t * p_evt)
     ble_thingy_weather_on_db_disc_evt(&m_thingy_weather_c[p_evt->conn_handle], p_evt);
     ble_thingy_motion_on_db_disc_evt(&m_thingy_motion_c[p_evt->conn_handle], p_evt);
     ble_thingy_config_on_db_disc_evt(&m_thingy_config_c[p_evt->conn_handle], p_evt);
+    ble_thingy_io_on_db_disc_evt(&m_thingy_io_c[p_evt->conn_handle], p_evt);
 }
 
 
@@ -1818,6 +1872,19 @@ static void write_conn_param(uint8_t* cmd) {
     ble_thingy_config_c_conn_param_send(p_ble_thingy_config_c, &config);
 }
 
+/**@brief Function for writing a Thingy node's external IO pins from an app command.
+ */
+static void write_io(uint8_t* cmd) {
+    uint8_t id = cmd[0];
+    ble_thingy_io_c_t *p_ble_thingy_io_c = &(m_thingy_io_c[id]);
+    ble_thingy_io_pin_t pins;
+    pins.mos1 = (cmd[1] == 0) ? 0 : 255;
+    pins.mos2 = (cmd[2] == 0) ? 0 : 255;
+    pins.mos3 = (cmd[3] == 0) ? 0 : 255;
+    pins.mos4 = (cmd[4] == 0) ? 0 : 255;
+    ble_thingy_io_c_send(p_ble_thingy_io_c, pins);
+}
+
 static void process_app_commands()
 {           
     if(agg_cmd_received != 0)
@@ -1888,6 +1955,14 @@ static void process_app_commands()
                 write_conn_param(agg_cmd);
                 break;
 
+            case APPCMD_IO_READ:
+              ble_thingy_io_c_read(&(m_thingy_io_c[agg_cmd[0]]));
+              break;
+
+            case APPCMD_IO_WRITE:
+              write_io(agg_cmd);
+              break;
+
             default:
                 break;
         }
@@ -1917,6 +1992,7 @@ int main(void)
     thingy_motion_c_init();
     thingy_battery_c_init();
     thingy_config_c_init();
+    thingy_io_c_init();
     thingy_battery_timer_start();
     ble_conn_state_init();
     advertising_data_set();

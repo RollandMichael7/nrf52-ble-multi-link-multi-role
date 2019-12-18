@@ -8,6 +8,7 @@
 #include "ble_thingy_weather_c.h"
 #include "ble_thingy_motion_c.h"
 #include "ble_thingy_config_c.h"
+#include "ble_thingy_io_c.h"
 
 #define MAX_NUMBER_OF_LINKS 20
 
@@ -37,6 +38,7 @@ typedef struct
     ble_thingy_motion_raw_t raw_motion;
     ble_thingy_motion_euler_t euler;
     ble_thingy_motion_heading_t heading;
+    ble_thingy_io_pin_t io;
 }link_info_t;
 
 typedef struct
@@ -53,6 +55,8 @@ void app_aggregator_on_central_connect(const ble_gap_evt_t *ble_gap_evt, connect
 void app_aggregator_on_central_disconnect(const ble_gap_evt_t *ble_gap_evt);
 
 void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state);
+
+void app_aggregator_on_io_data(uint16_t conn_handle, ble_thingy_io_pin_t pins);
 
 void app_aggregator_on_battery_data(uint16_t conn_handle, uint8_t battery_level);
 

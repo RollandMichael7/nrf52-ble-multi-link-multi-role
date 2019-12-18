@@ -11,7 +11,7 @@ enum {APP_AGG_ERROR_CONN_HANDLE_CONFLICT = 1, APP_AGG_ERROR_LINK_INFO_LIST_FULL,
 enum TX_COMMANDS {AGG_BLE_LINK_CONNECTED = 1, AGG_BLE_LINK_DISCONNECTED, AGG_BLE_LINK_DATA_UPDATE, AGG_BLE_BATTERY, 
                   AGG_BLE_LED_BUTTON_PRESSED, AGG_BLE_RSSI, AGG_BLE_TEMPERATURE, AGG_BLE_PRESSURE, AGG_BLE_HUMIDITY, 
                   AGG_BLE_GAS, AGG_BLE_ENV_CONFIG, AGG_BLE_QUATERNIONS, AGG_BLE_RAW_MOTION, AGG_BLE_EULER, AGG_BLE_HEADING, 
-                  AGG_BLE_MOTION_CONFIG, AGG_BLE_CONN_PARAM};
+                  AGG_BLE_MOTION_CONFIG, AGG_BLE_CONN_PARAM, AGG_BLE_IO};
 enum {APP_AGG_DEVICE_TYPE_UNKNOWN, APP_AGG_DEVICE_TYPE_BLINKY, APP_AGG_DEVICE_TYPE_THINGY, APP_AGG_DEVICE_TYPE_END};
 //static char *device_type_string_list[] = {"Unknown", "Blinky", "Thingy"};
 static char    *m_phy_name_string_list[] = {"NONE", "1Mbps", "2Mbps", "INVALID", "Coded"};
@@ -227,6 +227,19 @@ void app_aggregator_data_update_by_index(uint16_t device_index)
     tx_command_payload[6] = m_link_info_list[device_index].last_rssi;
     tx_command_payload_length = 7;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);    
+}
+
+void app_aggregator_data_update_io(uint16_t device_index)
+{
+    tx_command_payload[0] = AGG_BLE_IO;
+    tx_command_payload[1] = m_link_info_list[device_index].conn_handle >> 8;
+    tx_command_payload[2] = m_link_info_list[device_index].conn_handle & 0xFF;
+    tx_command_payload[3] = m_link_info_list[device_index].io.mos1;
+    tx_command_payload[4] = m_link_info_list[device_index].io.mos2;
+    tx_command_payload[5] = m_link_info_list[device_index].io.mos3;
+    tx_command_payload[6] = m_link_info_list[device_index].io.mos4;
+    tx_command_payload_length = 7;
+    cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
 void app_aggregator_data_update_battery(uint16_t device_index)
@@ -457,6 +470,17 @@ void app_aggregator_on_blinky_data(uint16_t conn_handle, uint8_t button_state)
         m_link_info_list[device_index].button_state = button_state;
         app_aggregator_data_update_by_index(device_index);
         //app_aggregator_data_update(conn_handle, &button_state, 1);
+        m_schedule_device_list_print = true;
+    }
+}
+
+void app_aggregator_on_io_data(uint16_t conn_handle, ble_thingy_io_pin_t pins)
+{
+    uint16_t device_index = device_list_search(conn_handle);
+    if(device_index != BLE_CONN_HANDLE_INVALID)
+    {
+        m_link_info_list[device_index].io = pins;
+        app_aggregator_data_update_io(device_index);
         m_schedule_device_list_print = true;
     }
 }
