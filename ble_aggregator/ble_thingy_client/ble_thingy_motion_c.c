@@ -232,7 +232,6 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
     // Check if this is a euler notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.euler_handle)
     {
-        NRF_LOG_INFO("euler event");
         ble_thingy_motion_c_evt_t ble_thingy_motion_c_evt;
 
         ble_thingy_motion_c_evt.evt_type                   = BLE_THINGY_MOTION_C_EVT_EULER_NOTIFICATION;
@@ -254,7 +253,6 @@ static void on_hvx(ble_thingy_motion_c_t * p_ble_thingy_motion_c, ble_evt_t cons
     // Check if this is a heading notification.
     if (p_ble_evt->evt.gattc_evt.params.hvx.handle == p_ble_thingy_motion_c->peer_thingy_motion_db.heading_handle)
     {
-        NRF_LOG_INFO("heading evt");
         ble_thingy_motion_c_evt_t ble_thingy_motion_c_evt;
 
         ble_thingy_motion_c_evt.evt_type                   = BLE_THINGY_MOTION_C_EVT_HEADING_NOTIFICATION;
@@ -336,7 +334,7 @@ void ble_thingy_motion_on_db_disc_evt(ble_thingy_motion_c_t * p_ble_thingy_motio
             }
         }
 
-        NRF_LOG_INFO("Motion Service discovered at peer.\r\n");
+        NRF_LOG_INFO("Motion Service discovered at peer.");
         //If the instance has been assigned prior to db_discovery, assign the db_handles
         if (p_ble_thingy_motion_c->conn_handle != BLE_CONN_HANDLE_INVALID)
         {
