@@ -26,7 +26,7 @@ The first byte of every command is the opcode.
 | Opcode        | Command           | Length | Arguments  |
 | ------------- |:------------------|:-------|:-----------|
 | 1  | Unused | | |
-| 2  | Toggle LED | 4 | 3 bytes - Logical OR of node IDs to toggle  |
+| 2  | Toggle LED | 4 | 3 bytes - Bitmap representation of node IDs to toggle (eg. 00000101 = toggle nodes 0 and 2)|
 | 3  | Unused | | |
 | 4  | Unused | | |
 | 5  | Unused | | |
