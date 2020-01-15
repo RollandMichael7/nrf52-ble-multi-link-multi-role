@@ -7,13 +7,13 @@ include support for reading more of the Thingy node's sensors. Meant to be used 
 ## Features
   - Relay sensor readings from Thingy nodes
     - Thingy Envionment service: temperature, pressure, humidity, air quality
-    - Thingy Motion service: acceleration, gyroscope, quaternions
+    - Thingy Motion service: acceleration, gyroscope, compass, heading, euler, quaternions
     - Button
     - Battery
   - Read/write 4 external digital pins
   - Toggle LED
   - Relay RSSI between node and aggregator
-  - Support configuration characteristics
+  - Read/write configuration characteristics
     - Thingy Environment service configuration
     - Thingy Motion service configuration
     - Thingy connection parameters characteristics
