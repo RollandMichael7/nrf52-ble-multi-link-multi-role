@@ -38,11 +38,24 @@ The first byte of every command is the opcode.
 | 7  | Write environment service config | 14 | 1 byte - Node ID <br> 2 bytes - Temperature interval in ms (100 - 60k) <br> 2 bytes - Pressure interval in ms (50 - 60k) <br> 2 bytes - Humidity interval in ms (100 - 60k) <br> 2 bytes - Color interval in ms (200 - 60k) <br> 1 byte - Gas mode (1, 2 or 3) <br> 3 bytes - Color sensor LED RGB (0-255)|
 | 8  | Read motion service config | 2 | 1 byte - node ID |
 | 9  | Write motion service config | 11 | 1 byte - Node ID <br> 2 bytes - Step interval in ms (100 - 5k) <br> 2 bytes - Temperature compensation interval in ms (100 - 5k) <br> 2 bytes - Magnetometer compensation interval in ms (100 - 1k) <br> 2 bytes - Processing frequency in Hz (5 - 200) <br> 1 byte - Wake-on-motion (0 or 1) |
-| 10 | Toggle sensor | 4 | 1 byte - Node ID <br> 1 byte - Sensor ID <br> 1 byte - Value (0 or 1) |
+| 10 | Toggle sensor | 4 | 1 byte - Node ID <br> 1 byte - Sensor ID* <br> 1 byte - Value (0 or 1) |
 | 11 | Read connection parameters | 2 | 1 byte - Node ID |
 | 12 | Write connection parameters | 10 | 1 byte - Node ID <br> 2 bytes - Minimum interval (unit 1.25ms) (6-3200) <br> 2 bytes - Maximum interval (unit 1.25ms) (6-3200) <br> 2 bytes - Slave latency (number of events) (0-499) <br> 2 bytes - Supervision timeout (unit 10ms) (10-3200) <br><br> **Constraint: sup_timeout * 4 > (1 + slave_latency) * max_conn_interval** |
 | 13 | Read external pins | 2 | 1 byte - Node ID |
 | 14 | Write external pins | 6 | 1 byte - Node ID <br> 4 bytes - Value for each pin (0 or 255) |
+
+&ast; Since this firmware is designed to be used with [this EPICS controller](https://github.com/epicsNSLS2-sensors/ThingyAggregatorIOC), the sensor ID argument matches the IDs used internally by the controller.
+
+| Sensor        | ID  |
+| ------------- |:----|
+| Temperature   | 5   |
+| Humidity      | 6   |
+| Pressure      | 7   |
+| Gas           | 8   |
+| Quaternions   | 41  |
+| Raw motion    | 42  |
+| Euler         | 43  |
+| Heading       | 44  |
 
 ## Responses
 Notifications pushed to UUID ```3e520003-1368-b682-4440-d7dd234c45bc``` may be sensor readings or responses to a command, such as
