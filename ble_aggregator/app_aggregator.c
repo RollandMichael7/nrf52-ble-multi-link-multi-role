@@ -406,7 +406,7 @@ void app_aggregator_data_update_raw_motion(uint16_t device_index)
     tx_command_payload[18] = m_link_info_list[device_index].raw_motion.compass.y[1];
     tx_command_payload[19] = m_link_info_list[device_index].raw_motion.compass.z[0];
     tx_command_payload[20] = m_link_info_list[device_index].raw_motion.compass.z[1];
-    tx_command_payload_length = 20;
+    tx_command_payload_length = 21;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
