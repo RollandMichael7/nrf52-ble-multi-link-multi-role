@@ -74,10 +74,10 @@ node ID will be the value(s) of the response.
 | 4   | Battery                    | 4   | 1 byte - Battery level (uint8) |
 | 5   | Unused                     |     | |
 | 6   | RSSI                       | 4   | 1 byte - RSSI (int8) |
-| 7   | Temperature                | 5   | 1 byte - Temperature integer (int8) <br> 1 byte - Temperature decimal (uint8) |
-| 8   | Pressure                   | 8   | 4 bytes - Pressure integer (int32) <br> 1 byte - Pressure decimal (uint8) |
-| 9   | Humidity                   | 4   | 1 byte - Humidity (uint8) |
-| 10  | Gas                        | 7   | 2 bytes - Carbon monoxide ppm (uint16) <br> 2 bytes - TVOC ppb (uint16) |
+| 7   | Temperature                | 5   | 1 byte - Temperature integer in Celsius (int8) <br> 1 byte - Temperature decimal (uint8) |
+| 8   | Pressure                   | 8   | 4 bytes - Pressure integer in hPa (int32) <br> 1 byte - Pressure decimal (uint8) |
+| 9   | Humidity                   | 4   | 1 byte - Relative humidity % (uint8) |
+| 10  | Gas                        | 7   | 2 bytes - Equivalent CO2 ppm (uint16) <br> 2 bytes - TVOC ppb (uint16) |
 | 11  | Environment service config | 15  | 2 bytes - Temperature interval in ms (uint16) <br> 2 bytes - Pressure interval in ms (uint16) <br> 2 bytes - Humidity interval in ms (uint16) <br> 2 bytes - Color interval in ms (uint16) <br> 1 byte - Gas mode (uint8) <br> 3 bytes - Color sensor RGB (uint8 x 3)|
 | 12  | Quaternions                | 19  | **Values are in 2Q30 fixed point format.** <br> 4 bytes - W (int32) <br> 4 bytes - X (int32) <br> 4 bytes - Y (int32) <br> 4 bytes - Z (int32) |
 | 13  | Raw motion                 | 21  | **6Q10 fixed point format** <br> 2 bytes - Accelerometer X in Gs (int16) <br> 2 bytes - Accelerometer Y <br> 2 bytes - Accelerometer Z <br> **11Q5 fixed point format** <br> 2 bytes - Gyroscope X in deg/s (int16) <br> 2 bytes - Gyroscope Y <br> 2 bytes - Gyroscope Z <br> **12Q4 fixed point format** <br> 2 bytes - Compass X in uT (int16) <br> 2 bytes - Compass Y <br> 2 bytes - Compass Z|
