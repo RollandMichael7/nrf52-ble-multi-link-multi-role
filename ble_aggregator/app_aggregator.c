@@ -440,7 +440,7 @@ void app_aggregator_data_update_heading(uint16_t device_index)
     tx_command_payload[4] = m_link_info_list[device_index].heading.value[1];
     tx_command_payload[5] = m_link_info_list[device_index].heading.value[2];
     tx_command_payload[6] = m_link_info_list[device_index].heading.value[3];
-    tx_command_payload_length = 15;
+    tx_command_payload_length = 7;
     cmd_buffer_put(tx_command_payload, tx_command_payload_length);
 }
 
