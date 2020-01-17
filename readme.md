@@ -4,6 +4,8 @@ An edited version of [Nordic's firmware for the NRF52 DK](https://github.com/Nor
 include support for reading more of the Thingy node's sensors. Meant to be used in conjunction with a corresponding 
 [EPICS controller](https://github.com/epicsNSLS2-sensors/ThingyAggregatorIOC).
 
+Must be compiled with [a very slightly modified SDK](https://github.com/RollandMichael7/nrf-sdk-v15.3) to support all motion sensors.
+
 ## Features
   - Relay sensor readings from Thingy nodes
     - Thingy Envionment service: temperature, pressure, humidity, air quality
